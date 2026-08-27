@@ -2,10 +2,10 @@
 
 ## Épica 1: Autenticación
 
-| ID | Historia de usuario | Estado | Asignado    |
-|----|---|---|-------------|
-| HU01 | Como usuario, quiero registrarme con nombre, correo y contraseña, para poder acceder a la aplicación. | En progreso | Wilmer      |
-| HU02 | Como usuario, quiero iniciar sesión con mi correo y contraseña, para acceder a mis grupos y gastos. | Pendiente | Wilmer      |
+| ID | Historia de usuario | Estado    | Asignado    |
+|----|---|-----------|-------------|
+| HU01 | Como usuario, quiero registrarme con nombre, correo y contraseña, para poder acceder a la aplicación. | listo     | Wilmer      |
+| HU02 | Como usuario, quiero iniciar sesión con mi correo y contraseña, para acceder a mis grupos y gastos. | listo     | Wilmer      |
 | HU03 | Como usuario, quiero cerrar sesión, para proteger mi cuenta en un computador compartido. | Pendiente | Por asignar |
 
 ## Épica 2: Grupos
@@ -49,10 +49,10 @@
 
 **Tareas:**
 - [x] Definir las 5 entidades del modelo de datos (Usuario, Grupo, MiembroGrupo, Gasto, GastoParticipante) — **Johan**
-- [ ] Corregir observaciones de revisión de código en las entidades (nombres de clases/paquete, tipos de dato de monto y fecha) — **Johan**
-- [ ] Verificar que las tablas se crean correctamente en MySQL — **Johan**
-- [ ] HU01: Formulario de registro (vista + controlador) — **Wilmer**
-- [ ] HU02: Formulario de login (vista + controlador) — **Wilmer**
+- [x] Corregir observaciones de revisión de código en las entidades (nombres de clases/paquete, tipos de dato de monto y fecha) — **Johan**
+- [x] Verificar que las tablas se crean correctamente en MySQL — **Johan**
+- [x] HU01: Formulario de registro (vista + controlador) — **Wilmer**
+- [x] HU02: Formulario de login (vista + controlador) — **Wilmer**
 ### Sprint 2 (próximo, no iniciado)
 
 - Repositorios (JPA Repository) para las 5 entidades
