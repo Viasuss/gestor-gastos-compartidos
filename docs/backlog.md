@@ -2,17 +2,17 @@
 
 ## Épica 1: Autenticación
 
-| ID | Historia de usuario | Estado    | Asignado    |
-|----|---|-----------|-------------|
-| HU01 | Como usuario, quiero registrarme con nombre, correo y contraseña, para poder acceder a la aplicación. | listo     | Wilmer      |
-| HU02 | Como usuario, quiero iniciar sesión con mi correo y contraseña, para acceder a mis grupos y gastos. | listo     | Wilmer      |
-| HU03 | Como usuario, quiero cerrar sesión, para proteger mi cuenta en un computador compartido. | Pendiente | Por asignar |
+| ID | Historia de usuario | Estado | Asignado |
+|----|---|--------|----------|
+| HU01 | Como usuario, quiero registrarme con nombre, correo y contraseña, para poder acceder a la aplicación. | listo  | Wilmer   |
+| HU02 | Como usuario, quiero iniciar sesión con mi correo y contraseña, para acceder a mis grupos y gastos. | listo  | Wilmer   |
+| HU03 | Como usuario, quiero cerrar sesión, para proteger mi cuenta en un computador compartido. | listo    | Wilmer   |
 
 ## Épica 2: Grupos
 
-| ID | Historia de usuario | Estado | Asignado |
-|----|---|---|---|
-| HU04 | Como usuario, quiero crear un grupo con un nombre, para organizar los gastos de un contexto específico (viaje, apto, etc.) | Pendiente | Por asignar |
+| ID | Historia de usuario | Estado    | Asignado    |
+|----|---|-----------|-------------|
+| HU04 | Como usuario, quiero crear un grupo con un nombre, para organizar los gastos de un contexto específico (viaje, apto, etc.) | listo     | wilmer      |
 | HU05 | Como usuario, quiero agregar a otros usuarios registrados a mi grupo, para que puedan participar en los gastos compartidos. | Pendiente | Por asignar |
 | HU06 | Como usuario, quiero ver la lista de grupos a los que pertenezco, para acceder rápido a cada uno. | Pendiente | Por asignar |
 
@@ -43,7 +43,7 @@
 
 ## Historial de Sprints
 
-### Sprint 1 (actual)
+### Sprint 1 
 
 **Sprint Goal:** Tener el registro y login de usuarios funcionando de punta a punta, más el modelo de datos completo creado en la base de datos.
 
@@ -53,17 +53,13 @@
 - [x] Verificar que las tablas se crean correctamente en MySQL — **Johan**
 - [x] HU01: Formulario de registro (vista + controlador) — **Wilmer**
 - [x] HU02: Formulario de login (vista + controlador) — **Wilmer**
-### Sprint 2 (próximo, no iniciado)
+### Sprint 2 
 
-- Repositorios (JPA Repository) para las 5 entidades
-- CRUD de grupos (HU04, HU05, HU06)
-- Conectar registro/login con la base de datos real (guardar y validar contra la tabla Usuario)
----
-
-*Última actualización: Sprint 1*
- 
-
-
+- [x] Crear los Repository (JPA) de las 5 entidades-Johan
+- [x] HU04: Backend de "crear grupo"-Johan
+- [x] Revisar/corregir el hash de contraseña-wilmer
+- [x] HU03: Botón/lógica de cerrar sesión-wilmer
+- [x] Vista de "inicio" (home) después del login-wilmer
 
 
 

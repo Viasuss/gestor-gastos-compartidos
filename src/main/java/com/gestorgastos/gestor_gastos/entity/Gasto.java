@@ -33,10 +33,10 @@ public class Gasto {
         this.grupo =  GrupoPertenece;
     }
 
-    public long Getid(){
+    public long GetId(){
         return this.id;
     }
-    public void  Setid(long id){
+    public void SetId(long id){
         this.id=id;
     }
 
