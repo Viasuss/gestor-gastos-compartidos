@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio - Gestor de Gastos</title>
+</head>
+
+<body>
+
+<h1>Gestor de Gastos Compartidos</h1>
+
+<h2>
+    Bienvenido,
+    <span th:text="${session.usuario.name}"></span>
+</h2>
+
+<p>Has iniciado sesión correctamente.</p>
+
+<br>
+
+<a href="/grupo/crear">
+    <button type="button">Crear grupo</button>
+</a>
+
+<br>
+<br>
+
+<a href="/logout">
+    <button type="button">Cerrar sesión</button>
+</a>
+
+</body>
+
+</html>
