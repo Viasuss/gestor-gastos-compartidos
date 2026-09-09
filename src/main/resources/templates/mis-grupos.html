@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mis grupos</title>
+</head>
+
+<body>
+
+<h1>Mis grupos</h1>
+
+<p>Grupos a los que perteneces:</p>
+
+<ul>
+    <li th:each="miembro : ${miembros}">
+        <span th:text="${miembro.getgrupo().getName()}"></span>
+    </li>
+</ul>
+
+<br>
+
+<a href="/inicio">
+    Volver al inicio
+</a>
+
+</body>
+
+</html>
