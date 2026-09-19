@@ -10,17 +10,77 @@
 
 <h1>Crear grupo</h1>
 
-<form th:action="@{/grupo/crear}"
-      th:object="${grupo}"
+<h2>Agregar personas</h2>
+
+<p>
+    Escribe el correo de una persona registrada para agregarla al grupo.
+</p>
+
+<!-- Formulario para agregar una persona -->
+<form th:action="@{/grupo/agregar-usuario}"
       method="post">
 
-    <label for="name">Nombre del grupo:</label>
+    <label for="email">Correo electrónico:</label>
+
+    <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Ej: usuario@gmail.com"
+            required>
+
+    <button type="submit">
+        Agregar
+    </button>
+
+</form>
+
+<br>
+
+<!-- Mensaje de error -->
+<p th:if="${error}"
+   th:text="${error}">
+</p>
+
+<!-- Mensaje de éxito -->
+<p th:if="${mensaje}"
+   th:text="${mensaje}">
+</p>
+
+<hr>
+
+<!-- Lista de personas agregadas -->
+<h2>Personas agregadas</h2>
+
+<ul>
+
+    <li th:each="email : ${usuariosTemporales}">
+
+        <span th:text="${email}"></span>
+
+    </li>
+
+</ul>
+
+<p th:if="${#lists.isEmpty(usuariosTemporales)}">
+    Todavía no has agregado personas.
+</p>
+
+<hr>
+
+<!-- Nombre del grupo -->
+<h2>Nombre del grupo</h2>
+
+<form th:action="@{/grupo/crear}"
+      method="post">
+
+    <label for="name">Nombre:</label>
 
     <input
             type="text"
             id="name"
-            th:field="*{name}"
-            placeholder="Ej: Viaje al pueblo"
+            name="name"
+            placeholder="Ej: Viaje a Cartagena"
             required>
 
     <br><br>
@@ -40,3 +100,4 @@
 </body>
 
 </html>
+```

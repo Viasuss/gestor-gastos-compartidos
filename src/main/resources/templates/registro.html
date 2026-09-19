@@ -8,12 +8,16 @@
 
 <body>
 
-<h1>Crear una cuenta</h1>
+<h1>Crea tu cuenta</h1>
+ <p empieza a controlar tus gastos compartidos>
+
+ </p>
+
 
 <form th:action="@{/registro}" th:object="${usuario}" method="post">
 
     <div>
-        <label for="name">Nombre:</label>
+        <label for="name">Nombre completo:</label>
 
         <input
                 type="text"
@@ -48,11 +52,58 @@
 
     <br>
 
+    <!-- Campo adicional para confirmar contraseña -->
+    <div>
+        <label for="confirmPassword">Confirmar contraseña:</label>
+
+        <input
+                type="password"
+                id="confirmPassword"
+                required>
+        <span id="passwordError" style="color: red; display: none;"><br>Las contraseñas no coinciden</span>
+    </div>
+
+    <br>
+
     <button type="submit">
-        Registrarse
+        Crear cuenta
     </button>
+    <p al crear tu cuenta aceptas los Terminos y la Politica de privacidad>
+
+    </p>
 
 </form>
+
+<p>
+    ¿ya tienes una cuenta?
+    <a href="/login">Iniciar sesión</a>
+</p>
+
+<!-- Script de validación -->
+<script>
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const passwordError = document.getElementById('passwordError');
+
+    function validarContraseñas() {
+        if (confirmPassword.value === "") {
+            confirmPassword.setCustomValidity("");
+            passwordError.style.display = 'none';
+            return;
+        }
+
+        if (password.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity("Las contraseñas no coinciden");
+            passwordError.style.display = 'inline';
+        } else {
+            confirmPassword.setCustomValidity("");
+            passwordError.style.display = 'none';
+        }
+    }
+
+    password.addEventListener('change', validarContraseñas);
+    confirmPassword.addEventListener('keyup', validarContraseñas);
+</script>
 
 </body>
 

@@ -8,7 +8,10 @@
 
 <body>
 
-<h1>Iniciar sesión</h1>
+<h1>Bienvenido de nuevo</h1>
+<p inicia sesión para ver tus gastos>
+
+</p>
 
 <p th:if="${param.error}">
     Correo o contraseña incorrectos.
@@ -53,7 +56,10 @@
     </button>
 
 </form>
-
+<p>
+    ¿no tienes una cuenta?
+    <a href="/registro">Registrarse</a>
+</p>
 </body>
 
 </html>

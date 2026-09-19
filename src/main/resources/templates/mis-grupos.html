@@ -12,10 +12,33 @@
 
 <p>Grupos a los que perteneces:</p>
 
-<ul>
+<div th:if="${#lists.isEmpty(miembros)}">
+
+    <p>
+        Todavía no perteneces a ningún grupo.
+    </p>
+
+</div>
+
+<ul th:unless="${#lists.isEmpty(miembros)}">
+
     <li th:each="miembro : ${miembros}">
-        <span th:text="${miembro.getgrupo().getName()}"></span>
+
+        <strong th:text="${miembro.grupo.name}">
+            Nombre del grupo
+        </strong>
+
+        <span th:text="' - Estado: ' + ${miembro.estado}">
+        Estado
+    </span>
+
+        <a th:if="${miembro.estado.name() == 'MIEMBRO'}"
+           th:href="@{/grupo/{id}(id=${miembro.grupo.id})}">
+            Ver grupo
+        </a>
+
     </li>
+
 </ul>
 
 <br>

@@ -10,11 +10,12 @@
 
 ## Épica 2: Grupos
 
-| ID | Historia de usuario | Estado    | Asignado    |
-|----|---|-----------|-------------|
-| HU04 | Como usuario, quiero crear un grupo con un nombre, para organizar los gastos de un contexto específico (viaje, apto, etc.) | listo     | wilmer      |
-| HU05 | Como usuario, quiero agregar a otros usuarios registrados a mi grupo, para que puedan participar en los gastos compartidos. | Pendiente | Por asignar |
-| HU06 | Como usuario, quiero ver la lista de grupos a los que pertenezco, para acceder rápido a cada uno. | Pendiente | Por asignar |
+| ID | Historia de usuario                                                                                                        | Estado | Asignado |
+|----|----------------------------------------------------------------------------------------------------------------------------|--------|---------|
+| HU04 | Como usuario, quiero crear un grupo con un nombre, para organizar los gastos de un contexto específico (viaje, apto, etc.) | listo  | wilmer  |
+| HU05 | Como usuario, quiero agregar a otros usuarios registrados a mi grupo, para que puedan participar en los gastos compartidos | listo  | Johan   |
+| HU05.1 | Como usuario invitado, quiero ver mis invitaciones pendientes y poder aceptarlas o rechazarlas, para decidir si quiero unirme a un grupo. | Listo | Johan |
+| HU06 | Como usuario, quiero ver la lista de grupos a los que pertenezco, para acceder rápido a cada uno.                          | listo  | wilmer  |
 
 ## Épica 3: Gastos
 
@@ -34,7 +35,7 @@
 
 ## Fuera de alcance (MVP)
 
-- Notificaciones automáticas (correo/push)
+- Notificaciones automáticas por correo/push (las invitaciones sí se ven dentro de la web, pero no se notifican por fuera)
 - Simplificación inteligente de deudas (algoritmo que minimiza transacciones)
 - App nativa (solo web por ahora)
 - Subida de fotos de recibos/comprobantes
@@ -60,7 +61,16 @@
 - [x] Revisar/corregir el hash de contraseña-wilmer
 - [x] HU03: Botón/lógica de cerrar sesión-wilmer
 - [x] Vista de "inicio" (home) después del login-wilmer
-
+### sprint 3
+- [x] HU05: Controlador para agregar miembro a un grupo — recibe el correo, busca el Usuario con UsuarioRepository, si existe lo guarda en MiembroGrupoRepository asociado al grupo; si no existe, mostrar un mensaje de error simple ("usuario no encontrado") - **johan**
+- [x] Vista simple con un formulario (un campo de texto para el correo + botón) - **johan**
+- [x] HU06: Controlador que liste los grupos donde el usuario logueado es miembro (usando la sesión, igual que ya hizo con el login) — muestra una vista simple con el nombre de cada grupo - **wilmer**
+### Sprint 4
+- [x] Entidad `EstadoMiembro` (enum: PENDIENTE, MIEMBRO, RECHAZO) — **Johan**
+- [x] `InvitacionController`: ver invitaciones, aceptar, rechazar — **Johan**
+- [x] Validación de seguridad: solo el usuario invitado puede aceptar/rechazar su propia invitación — **Johan**
+- [x] Vista `invitaciones.html` — **Johan**
+- [x] Diseño en Figma de las pantallas principales de la app (login, registro, inicio, mis grupos, detalle de grupo) — **Johan**
 
 
 

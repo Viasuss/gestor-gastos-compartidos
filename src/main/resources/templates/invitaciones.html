@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Invitaciones</title>
+</head>
+
+<body>
+
+<h1>Invitaciones</h1>
+
+<p>
+    Estas son las invitaciones que tienes pendientes.
+</p>
+
+<hr>
+
+<!-- ============================= -->
+<!-- SIN INVITACIONES -->
+<!-- ============================= -->
+
+<div th:if="${#lists.isEmpty(invitaciones)}">
+
+    <p>
+        No tienes invitaciones pendientes.
+    </p>
+
+</div>
+
+
+<!-- ============================= -->
+<!-- INVITACIONES -->
+<!-- ============================= -->
+
+<div th:unless="${#lists.isEmpty(invitaciones)}">
+
+    <div th:each="invitacion : ${invitaciones}">
+
+        <h2 th:text="${invitacion.grupo.name}">
+            Nombre del grupo
+        </h2>
+
+        <p>
+            <strong>Invitado por:</strong>
+
+            <span th:text="${invitacion.grupo.creador.name}">
+                    Nombre del creador
+                </span>
+        </p>
+
+        <p>
+            <strong>Estado:</strong>
+
+            <span th:text="${invitacion.estado}">
+        PENDIENTE
+    </span>
+        </p>
+
+        <form th:action="@{/invitacion/{id}/aceptar(id=${invitacion.id})}"
+              method="post">
+
+            <button type="submit">
+                Aceptar
+            </button>
+
+        </form>
+
+        <form th:action="@{/invitacion/{id}/rechazar(id=${invitacion.id})}"
+              method="post">
+
+            <button type="submit">
+                Rechazar
+            </button>
+
+        </form>
+
+        <hr>
+
+
+    </div>
+
+</div>
+
+
+<br>
+
+<a href="/inicio">
+    Volver al inicio
+</a>
+
+</body>
+
+</html>

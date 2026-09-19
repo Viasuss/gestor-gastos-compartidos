@@ -13,12 +13,15 @@ public class GastoParticipante {
     private Usuario usuario;
     @ManyToOne
     private Grupo grupo;
+    @ManyToOne
+    private Gasto gasto;
 
     public GastoParticipante(){
     }
-    public GastoParticipante(Usuario UsuarioPago, Grupo GrupoPertenece){
+    public GastoParticipante(Usuario UsuarioPago, Grupo GrupoPertenece, Gasto gasto){
         this.usuario = UsuarioPago;
         this.grupo = GrupoPertenece ;
+        this.gasto = gasto;
     }
 
     public long getId() {
@@ -40,5 +43,12 @@ public class GastoParticipante {
     }
     public void setGrupo(Grupo grupo) {
         this.grupo = grupo;
+    }
+
+    public Gasto getGasto() {
+        return gasto;
+    }
+    public void setGasto(Gasto gasto) {
+        this.gasto = gasto;
     }
 }
