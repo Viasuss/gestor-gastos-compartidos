@@ -11,13 +11,15 @@
 <h1>Gestor de Gastos Compartidos</h1>
 
 <h2>
-    Bienvenido,
+    Hola,
     <span th:text="${session.usuario.name}"></span>
 </h2>
 
-<p>Has iniciado sesión correctamente.</p>
+<p>Aqui va tu resumen de hoy.</p>
 
 <br>
+
+    <h3>Acciones rápidas</h3>
 
 <a href="/grupo/crear">
     <button type="button">Crear grupo</button>
@@ -30,6 +32,12 @@
     <button type="button">Mis grupos</button>
 </a>
 
+<br>
+<br>
+
+    <a href="/invitaciones">
+    <button type="button"> Mis invitaciones</button>
+    </a>
 <br>
 <br>
 
