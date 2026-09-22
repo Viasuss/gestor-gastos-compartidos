@@ -40,38 +40,38 @@ public class Gasto {
         this.id=id;
     }
 
-    public String getDescripcion() {
+    public String GetDescripcion() {
         return descripcion;
     }
-    public void setDescripcion(String descripcion) {
+    public void SetDescripcion(String descripcion) {
     this.descripcion = descripcion;
     }
 
-    public BigDecimal getMonto() {
+    public BigDecimal GetMonto() {
         return monto;
     }
-    public void setMonto(BigDecimal monto) {
+    public void SetMonto(BigDecimal monto) {
         this.monto = monto;
     }
 
-    public LocalDate getFecha() {
+    public LocalDate GetFecha() {
         return fecha;
     }
-    public void setFecha(String fecha) {
-        this.fecha = LocalDate.parse(fecha);
+    public void SetFecha(LocalDate fecha) {
+        this.fecha = fecha;
     }
 
-    public Usuario getusuario() {
+    public Usuario Getusuario() {
         return usuario;
     }
-    public void setusuario(Usuario usuario) {
+    public void Setusuario(Usuario usuario) {
         this.usuario = usuario;
     }
 
-    public Grupo getgrupo() {
+    public Grupo Getgrupo() {
         return grupo;
     }
-    public void setgrupo(Grupo grupo) {
+    public void Setgrupo(Grupo grupo) {
         this.grupo = grupo;
     }
 }

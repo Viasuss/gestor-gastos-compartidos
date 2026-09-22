@@ -20,4 +20,8 @@ public interface MiembroGrupoRepository extends JpaRepository<MiembroGrupo, Long
     List<MiembroGrupo> findByUsuarioIdAndEstado(
             Long usuarioId,
             EstadoMiembro estado);
+
+    List<MiembroGrupo> findByGrupoIdAndEstado(
+            Long grupoId,
+            EstadoMiembro estado);
 }

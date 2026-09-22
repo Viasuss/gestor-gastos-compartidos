@@ -3,99 +3,91 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${grupo.name}">Grupo</title>
 </head>
 
 <body>
 
 <!-- ============================= -->
-<!-- ENCABEZADO DEL GRUPO -->
+<!-- ENCABEZADO -->
 <!-- ============================= -->
 
-<a href="/mis-grupos">
-    ← Volver a mis grupos
+<header>
+
+    <a href="/mis-grupos">
+        ← Volver a mis grupos
+    </a>
+    <h1 th:text="${grupo.name}">
+    </h1>
+
+    <!-- Metadata del grupo: contexto secundario, no es lo primero que se lee -->
+    <p>
+        <small>
+            Creado por
+            <span th:text="${grupo.creador.name}">
+            </span>
+            el
+            <span th:text="${grupo.fecha_creacion}">Fecha></span>
+        </small>
+    </p>
+</header>
+
+<!-- ============================= -->
+<!-- TARJETA DE DEUDA -->
+<!-- ============================= -->
+
+<!-- PENDIENTE (HU10): el controlador todavía no calcula ni envía la deuda.
+     Por ahora dejamos el mismo texto que ya tenía la vista ("Mi deuda: $0"),
+     solo lo movemos a esta tarjeta para que quede en el lugar del Figma -->
+<section>
+    <p>Mi deuda</p>
+    <p>$0</p>
+</section>
+
+<!-- ============================= -->
+<!-- INTEGRANTES -->
+<!-- ============================= -->
+
+<section>
+
+    <p>Integrantes:</p>
+
+    <ul>
+
+        <li th:each="miembro : ${miembros}">
+            <span th:text="${miembro.usuario.name}">
+            </span>
+        </li>
+
+    </ul>
+
+</section>
+
+<!-- ============================= -->
+<!-- BOTÓN AGREGAR GASTO -->
+<!-- ============================= -->
+
+<a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}">
+    <button type="button">+ Agregar gasto</button>
 </a>
 
-<h1 th:text="${grupo.name}">
-    Nombre del grupo
-</h1>
-
-<p>
-    <strong>Creador:</strong>
-    <span th:text="${grupo.creador.name}">
-            Nombre del creador
-        </span>
-</p>
-
-<p>
-    <strong>Fecha de creación:</strong>
-    <span th:text="${grupo.fecha_creacion}">
-            Fecha
-        </span>
-</p>
-
-<hr>
-
-
 <!-- ============================= -->
-<!-- MIEMBROS -->
+<!-- HISTORIAL DE GASTOS -->
 <!-- ============================= -->
 
-<h2>Miembros</h2>
+<!-- PENDIENTE (HU09): el controlador todavía no envía la lista de gastos del grupo.
+     Cuando GastoRepository.findByGrupoOrderByFechaDesc se conecte aquí,
+     esto se reemplaza por un th:each igual que hicimos con los miembros -->
+<section>
 
-<ul>
+    <h2>Historial de gastos</h2>
 
-    <li th:each="miembro : ${miembros}">
+    <p>
+        Todavía no hay gastos registrados.
+    </p>
 
-        <strong th:text="${miembro.usuario.name}">
-            Nombre
-        </strong>
-
-        <span th:text="' - Estado: ' + ${miembro.estado}">
-                Estado
-            </span>
-
-    </li>
-
-</ul>
-
-<hr>
-
-
-<!-- ============================= -->
-<!-- GASTOS -->
-<!-- ============================= -->
-
-<h2>Gastos</h2>
-
-<p>
-    Todavía no hay gastos registrados.
-</p>
-
-<!-- Lo conectaremos cuando hagamos HU07 -->
-
-<hr>
-
-
-<!-- ============================= -->
-<!-- RESUMEN -->
-<!-- ============================= -->
-
-<h2>Resumen</h2>
-
-<p>
-    <strong>Total gastado:</strong> $0
-</p>
-
-<p>
-    <strong>Mi deuda:</strong> $0
-</p>
-
-<!-- Lo conectaremos cuando hagamos HU10 -->
-
-
-<br>
-
+</section>
 
 </body>
 
