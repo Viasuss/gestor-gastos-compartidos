@@ -3,214 +3,58 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Agregar gasto</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #222;
-        }
-
-        .contenedor {
-            width: 100%;
-            max-width: 420px;
-            min-height: 100vh;
-            margin: auto;
-            padding: 20px;
-            background-color: white;
-        }
-
-        .encabezado {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .volver {
-            text-decoration: none;
-            color: #222;
-            font-size: 24px;
-        }
-
-        .titulo {
-            margin: 0;
-            font-size: 22px;
-        }
-
-        .grupo {
-            display: inline-block;
-            padding: 8px 14px;
-            margin-bottom: 20px;
-            border-radius: 20px;
-            background-color: #e4f3ef;
-            color: #175f55;
-            font-weight: bold;
-        }
-
-        .campo {
-            margin-bottom: 18px;
-        }
-
-        .campo label {
-            display: block;
-            margin-bottom: 7px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .campo input {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 15px;
-        }
-
-        .monto {
-            font-size: 24px !important;
-            font-weight: bold;
-        }
-
-        .subtitulo {
-            margin-top: 22px;
-            margin-bottom: 10px;
-            font-size: 15px;
-            font-weight: bold;
-        }
-
-        .opciones {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .opcion-pagador {
-            position: relative;
-        }
-
-        .opcion-pagador input {
-            display: none;
-        }
-
-        .opcion-pagador label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 55px;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            cursor: pointer;
-            text-align: center;
-            background-color: white;
-        }
-
-        .opcion-pagador input:checked + label {
-            background-color: #176b61;
-            color: white;
-            border-color: #176b61;
-        }
-
-        .participantes {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .participante {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 13px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            cursor: pointer;
-        }
-
-        .participante input {
-            width: 18px;
-            height: 18px;
-        }
-
-        .mensaje {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 12px;
-            background-color: #e4f3ef;
-            color: #175f55;
-            font-size: 13px;
-        }
-
-        .boton-guardar {
-            width: 100%;
-            margin-top: 20px;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            background-color: #176b61;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .boton-guardar:hover {
-            opacity: 0.9;
-        }
-
-    </style>
 </head>
 
 <body>
 
-<div class="contenedor">
+<!-- Encabezado -->
 
-    <!-- Encabezado -->
-    <div class="encabezado">
+<header>
 
-        <a
-                class="volver"
-                th:href="@{/grupo/{id}(id=${grupo.id})}">
-            ←
-        </a>
+    <a th:href="@{/grupo/{id}(id=${grupo.id})}">
+        ←
+    </a>
 
-        <h1 class="titulo">
-            Agregar gasto
-        </h1>
+    <h1>Agregar gasto</h1>
 
-    </div>
+</header>
 
 
-    <!-- Nombre del grupo -->
-    <div class="grupo">
+<!-- Información del grupo -->
+
+<section>
+
+    <p>
         💰
-        <span th:text="${grupo.name}">
+        <strong th:text="${grupo.name}">
             Nombre del grupo
-        </span>
-    </div>
+        </strong>
+    </p>
 
+</section>
+
+
+<!-- Formulario -->
+
+<main>
 
     <form
             th:action="@{/grupo/{id}/gasto(id=${grupo.id})}"
             method="post">
 
 
-        <!-- Descripción -->
-        <div class="campo">
+        <!-- DESCRIPCIÓN -->
+
+        <section>
 
             <label for="descripcion">
                 Descripción
             </label>
+
+            <br>
 
             <input
                     type="text"
@@ -219,121 +63,164 @@
                     placeholder="Ej: Mercado, hospedaje..."
                     required>
 
-        </div>
+        </section>
 
 
-        <!-- Monto -->
-        <div class="campo">
+        <br>
+
+
+        <!-- MONTO -->
+
+        <section>
 
             <label for="monto">
                 Monto
             </label>
 
+            <br>
+
             <input
-                    class="monto"
                     type="number"
                     id="monto"
                     name="monto"
+                    placeholder="$ 0"
                     min="0"
                     step="0.01"
-                    placeholder="$ 0"
                     required>
 
-        </div>
+        </section>
 
 
-        <!-- Fecha -->
-        <div class="campo">
+        <br>
+
+
+        <!-- FECHA -->
+
+        <section>
 
             <label for="fecha">
                 Fecha
             </label>
 
+            <br>
+
+            <!-- Solo se muestra -->
+            <!-- El backend será quien guarde la fecha real -->
+
             <input
-                    type="date"
+                    type="text"
                     id="fecha"
-                    name="fecha"
-                    required>
+                    th:value="${#temporals.format(T(java.time.LocalDate).now(), 'dd/MM/yyyy')}"
+                    readonly>
 
-        </div>
+        </section>
 
 
-        <!-- Quién pagó -->
-        <div class="subtitulo">
-            ¿Quién pagó?
-        </div>
+        <br>
 
-        <div class="opciones">
 
-            <div
-                    class="opcion-pagador"
-                    th:each="miembro : ${miembros}">
+        <!-- QUIÉNES PAGARON -->
 
-                <input
-                        type="radio"
-                        name="pagadorId"
-                        th:id="'pagador-' + ${miembro.usuario.id}"
-                        th:value="${miembro.usuario.id}"
-                        required>
+        <section>
 
-                <label
-                        th:for="'pagador-' + ${miembro.usuario.id}"
-                        th:text="${miembro.usuario.name}">
-                    Usuario
+            <h2>
+                ¿Quién pagó?
+            </h2>
+
+            <p>
+                Puedes seleccionar una o varias personas.
+            </p>
+
+
+            <div th:each="miembro : ${miembros}">
+
+                <label>
+
+                    <input
+                            type="checkbox"
+                            name="pagadores"
+                            th:value="${miembro.usuario.id}">
+
+                    <span th:text="${miembro.usuario.name}">
+                            Nombre del usuario
+                        </span>
+
                 </label>
+
+                <br>
 
             </div>
 
-        </div>
+        </section>
 
 
-        <!-- Dividir entre -->
-        <div class="subtitulo">
-            Dividir entre
-        </div>
-
-        <div class="participantes">
-
-            <label
-                    class="participante"
-                    th:each="miembro : ${miembros}">
-
-                <input
-                        type="checkbox"
-                        name="participantes"
-                        th:value="${miembro.usuario.id}">
-
-                <span th:text="${miembro.usuario.name}">
-                    Usuario
-                </span>
-
-            </label>
-
-        </div>
+        <br>
 
 
-        <!-- Mensaje -->
-        <div class="mensaje">
+        <!-- DIVIDIR ENTRE -->
 
-            💵
-            Se dividirá en partes iguales entre los
-            seleccionados.
+        <section>
 
-        </div>
+            <h2>
+                Dividir entre
+            </h2>
+
+            <p>
+                Selecciona las personas que participarán en el gasto.
+            </p>
 
 
-        <!-- Guardar -->
-        <button
-                class="boton-guardar"
-                type="submit">
+            <div th:each="miembro : ${miembros}">
 
+                <label>
+
+                    <input
+                            type="checkbox"
+                            name="participantes"
+                            th:value="${miembro.usuario.id}">
+
+                    <span th:text="${miembro.usuario.name}">
+                            Nombre del usuario
+                        </span>
+
+                </label>
+
+                <br>
+
+            </div>
+
+        </section>
+
+
+        <br>
+
+
+        <!-- INFORMACIÓN -->
+
+        <section>
+
+            <p>
+                💵
+                Se dividirá en partes iguales entre las
+                personas seleccionadas.
+            </p>
+
+        </section>
+
+
+        <br>
+
+
+        <!-- BOTÓN -->
+
+        <button type="submit">
             Guardar gasto
-
         </button>
+
 
     </form>
 
-</div>
+</main>
 
 </body>
 
