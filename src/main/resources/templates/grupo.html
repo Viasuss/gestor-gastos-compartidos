@@ -83,9 +83,57 @@
 
     <h2>Historial de gastos</h2>
 
-    <p>
-        Todavía no hay gastos registrados.
-    </p>
+
+    <!-- No hay gastos -->
+
+    <div th:if="${#lists.isEmpty(gastos)}">
+
+        <p>
+            Todavía no hay gastos registrados.
+        </p>
+
+    </div>
+
+
+    <!-- Lista de gastos -->
+
+    <div th:unless="${#lists.isEmpty(gastos)}">
+
+        <article th:each="gasto : ${gastos}">
+
+            <h3 th:text="${gasto.GetDescripcion()}">
+                Descripción del gasto
+            </h3>
+
+            <p>
+                <strong>Monto:</strong>
+
+                <span th:text="${gasto.GetMonto()}">
+                    $0
+                </span>
+            </p>
+
+            <p>
+                <strong>Fecha:</strong>
+
+                <span th:text="${gasto.GetFecha()}">
+                    00/00/0000
+                </span>
+            </p>
+
+            <p>
+                <strong>Pagó:</strong>
+
+                <span th:text="${gasto.Getusuario().getName()}">
+                    Usuario
+                </span>
+            </p>
+
+            <hr>
+
+        </article>
+
+    </div>
 
 </section>
 

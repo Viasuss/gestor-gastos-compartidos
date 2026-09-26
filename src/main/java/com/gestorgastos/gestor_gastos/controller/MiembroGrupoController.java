@@ -1,5 +1,7 @@
 package com.gestorgastos.gestor_gastos.controller;
 
+import com.gestorgastos.gestor_gastos.entity.Gasto;
+import com.gestorgastos.gestor_gastos.repository.GastoRepository;
 import com.gestorgastos.gestor_gastos.entity.MiembroGrupo;
 import com.gestorgastos.gestor_gastos.entity.Usuario;
 import com.gestorgastos.gestor_gastos.repository.GrupoRepository;
@@ -23,13 +25,16 @@ public class MiembroGrupoController {
 
     private final MiembroGrupoRepository miembroGrupoRepository;
     private final GrupoRepository grupoRepository;
+    private final GastoRepository gastoRepository;
 
     public MiembroGrupoController(
             MiembroGrupoRepository miembroGrupoRepository,
-            GrupoRepository grupoRepository) {
+            GrupoRepository grupoRepository,
+            GastoRepository gastoRepository) {
 
         this.miembroGrupoRepository = miembroGrupoRepository;
         this.grupoRepository = grupoRepository;
+        this.gastoRepository = gastoRepository;
     }
 
     @GetMapping("/mis-grupos")
@@ -82,8 +87,12 @@ public class MiembroGrupoController {
         List<MiembroGrupo> miembros =
                 miembroGrupoRepository.findByGrupoId(id);
 
+        List<Gasto> gastos =
+                gastoRepository.findByGrupoOrderByFechaDesc(grupo);
+
         model.addAttribute("grupo", grupo);
         model.addAttribute("miembros", miembros);
+        model.addAttribute("gastos", gastos);
 
         return "grupo";
     }
