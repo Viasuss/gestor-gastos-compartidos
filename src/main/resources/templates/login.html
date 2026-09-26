@@ -15,10 +15,7 @@
     <h1>Bienvenido de nuevo</h1>
     <p>Inicia sesión para ver tus gastos</p>
 
-    <!-- Mensaje de error (ya funciona con el controlador) -->
-    <p th:if="${param.error}">
-        Correo o contraseña incorrectos.
-    </p>
+
 
     <form action="/login" method="post">
 
@@ -45,6 +42,10 @@
         </div>
 
         <br>
+        <!-- Mensaje de error (ya funciona con el controlador) -->
+        <p th:if="${param.error}">
+            Correo o contraseña incorrectos.
+        </p>
 
         <button type="submit">
             Iniciar sesión

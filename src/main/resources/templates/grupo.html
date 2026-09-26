@@ -76,9 +76,6 @@
 <!-- HISTORIAL DE GASTOS -->
 <!-- ============================= -->
 
-<!-- PENDIENTE (HU09): el controlador todavía no envía la lista de gastos del grupo.
-     Cuando GastoRepository.findByGrupoOrderByFechaDesc se conecte aquí,
-     esto se reemplaza por un th:each igual que hicimos con los miembros -->
 <section>
 
     <h2>Historial de gastos</h2>
@@ -97,18 +94,23 @@
 
     <!-- Lista de gastos -->
 
+    <!-- CORREGIDO: eran GetDescripcion(), GetMonto(), GetFecha(), Getusuario()
+         con mayúscula (nombres viejos, de antes de arreglar Gasto.java).
+         Ahora los getters reales son getDescripcion(), getMonto(), getFecha(),
+         getUsuario() en minúscula, así que Thymeleaf debe llamarlos así. -->
+
     <div th:unless="${#lists.isEmpty(gastos)}">
 
         <article th:each="gasto : ${gastos}">
 
-            <h3 th:text="${gasto.GetDescripcion()}">
+            <h3 th:text="${gasto.getDescripcion()}">
                 Descripción del gasto
             </h3>
 
             <p>
                 <strong>Monto:</strong>
 
-                <span th:text="${gasto.GetMonto()}">
+                <span th:text="${gasto.getMonto()}">
                     $0
                 </span>
             </p>
@@ -116,7 +118,7 @@
             <p>
                 <strong>Fecha:</strong>
 
-                <span th:text="${gasto.GetFecha()}">
+                <span th:text="${gasto.getFecha()}">
                     00/00/0000
                 </span>
             </p>
@@ -124,7 +126,7 @@
             <p>
                 <strong>Pagó:</strong>
 
-                <span th:text="${gasto.Getusuario().getName()}">
+                <span th:text="${gasto.getUsuario().getName()}">
                     Usuario
                 </span>
             </p>

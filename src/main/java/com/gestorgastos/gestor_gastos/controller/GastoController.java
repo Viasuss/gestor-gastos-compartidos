@@ -54,15 +54,12 @@ public class GastoController {
             HttpSession session,
             Model model) {
 
-        // 1. Verificar sesión
         Usuario usuario = (Usuario) session.getAttribute("usuario");
 
         if (usuario == null) {
             return "redirect:/login";
         }
 
-        // 2. Verificar que el usuario en sesión sea MIEMBRO de este grupo
-        //    (mismo patrón que usa MiembroGrupoController.verGrupo)
         Optional<MiembroGrupo> relacion =
                 miembroGrupoRepository.findByUsuarioIdAndGrupoId(
                         usuario.getId(),
@@ -75,21 +72,18 @@ public class GastoController {
             return "redirect:/mis-grupos";
         }
 
-        // 3. Buscar el grupo
         Grupo grupo = grupoRepository.findById(id).orElse(null);
 
         if (grupo == null) {
             return "redirect:/mis-grupos";
         }
 
-        // 4. Buscar solo los miembros que ya aceptaron (estado MIEMBRO)
         List<MiembroGrupo> miembros =
                 miembroGrupoRepository.findByGrupoIdAndEstado(
                         id,
                         EstadoMiembro.MIEMBRO
                 );
 
-        // 5. Mandar todo a la vista
         model.addAttribute("grupo", grupo);
         model.addAttribute("miembros", miembros);
 
@@ -111,14 +105,12 @@ public class GastoController {
             @RequestParam List<Long> participantes,
             HttpSession session) {
 
-        // 1. Verificar sesión
         Usuario usuario = (Usuario) session.getAttribute("usuario");
 
         if (usuario == null) {
             return "redirect:/login";
         }
 
-        // 2. Verificar que el usuario en sesión sea MIEMBRO de este grupo
         Optional<MiembroGrupo> relacion =
                 miembroGrupoRepository.findByUsuarioIdAndGrupoId(
                         usuario.getId(),
@@ -130,14 +122,12 @@ public class GastoController {
             return "redirect:/mis-grupos";
         }
 
-        // 3. Buscar el grupo
         Grupo grupo = grupoRepository.findById(id).orElse(null);
 
         if (grupo == null) {
             return "redirect:/mis-grupos";
         }
 
-        // 4. Buscar quién pagó (debe ser MIEMBRO del grupo)
         Optional<MiembroGrupo> relacionPagador =
                 miembroGrupoRepository.findByUsuarioIdAndGrupoId(
                         pagadorId,
@@ -152,13 +142,15 @@ public class GastoController {
         Usuario pagador = relacionPagador.get().getUsuario();
 
         // 5. Crear y guardar el Gasto (una sola fila)
+        // OJO: los setters van en minúscula (setDescripcion, no SetDescripcion),
+        // siguiendo ahora la convención JavaBean que ya corregimos en Gasto.java
         Gasto gasto = new Gasto();
 
-        gasto.SetDescripcion(descripcion);
-        gasto.SetMonto(monto);
-        gasto.SetFecha(fecha);
-        gasto.Setusuario(pagador);
-        gasto.Setgrupo(grupo);
+        gasto.setDescripcion(descripcion);
+        gasto.setMonto(monto);
+        gasto.setFecha(fecha);
+        gasto.setUsuario(pagador);
+        gasto.setGrupo(grupo);
 
         gastoRepository.save(gasto);
 
@@ -172,7 +164,6 @@ public class GastoController {
                             id
                     );
 
-            // Solo agregamos participantes que de verdad son MIEMBRO del grupo
             if (relacionParticipante.isPresent() &&
                     relacionParticipante.get().getEstado() == EstadoMiembro.MIEMBRO) {
 

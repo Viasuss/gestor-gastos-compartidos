@@ -104,14 +104,27 @@
 
             <br>
 
-            <!-- Solo se muestra -->
-            <!-- El backend será quien guarde la fecha real -->
+            <!-- CORREGIDO: el usuario NO debe poder tocar la fecha, ni siquiera
+                 abriendo el calendario del navegador. Por eso son dos inputs:
+
+                 1) Uno solo VISUAL, deshabilitado ("disabled"), que muestra la fecha
+                    pero no se puede editar ni desde el calendario. Al estar "disabled",
+                    el navegador NO lo envía al servidor (por eso no tiene name="fecha").
+
+                 2) Uno oculto ("hidden"), invisible para el usuario, que sí tiene
+                    name="fecha" y sí viaja al backend con el mismo valor. Este es
+                    el que de verdad llega a tu @RequestParam LocalDate fecha. -->
 
             <input
-                    type="text"
+                    type="date"
                     id="fecha"
-                    th:value="${#temporals.format(T(java.time.LocalDate).now(), 'dd/MM/yyyy')}"
-                    readonly>
+                    th:value="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy-MM-dd')}"
+                    disabled>
+
+            <input
+                    type="hidden"
+                    name="fecha"
+                    th:value="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy-MM-dd')}">
 
         </section>
 
@@ -119,7 +132,7 @@
         <br>
 
 
-        <!-- QUIÉNES PAGARON -->
+        <!-- QUIÉN PAGÓ -->
 
         <section>
 
@@ -128,18 +141,25 @@
             </h2>
 
             <p>
-                Puedes seleccionar una o varias personas.
+                Selecciona una sola persona.
             </p>
 
+
+            <!-- CORREGIDO: eran checkboxes con name="pagadores" (permitía varios).
+                 Un gasto lo paga UNA sola persona, así que usamos radio buttons:
+                 con el mismo "name" en todos, el navegador solo deja marcar uno.
+                 También el name pasa a ser "pagadorId", para que coincida
+                 exactamente con @RequestParam Long pagadorId del controlador. -->
 
             <div th:each="miembro : ${miembros}">
 
                 <label>
 
                     <input
-                            type="checkbox"
-                            name="pagadores"
-                            th:value="${miembro.usuario.id}">
+                            type="radio"
+                            name="pagadorId"
+                            th:value="${miembro.usuario.id}"
+                            required>
 
                     <span th:text="${miembro.usuario.name}">
                             Nombre del usuario

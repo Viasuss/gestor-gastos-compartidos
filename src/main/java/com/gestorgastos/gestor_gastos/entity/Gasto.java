@@ -26,55 +26,52 @@ public class Gasto {
     }
 
     public Gasto(String descripcion, BigDecimal monto, LocalDate fecha, Usuario UsuarioPago, Grupo GrupoPertenece) {
-        this .descripcion = descripcion;
+        this.descripcion = descripcion;
         this.monto = monto;
         this.fecha = fecha;
         this.usuario = UsuarioPago;
-        this.grupo =  GrupoPertenece;
+        this.grupo = GrupoPertenece;
     }
 
-    public long GetId(){
+    public long getId() {
         return this.id;
     }
-    public void SetId(long id){
-        this.id=id;
+    public void setId(long id) {
+        this.id = id;
     }
 
-    public String GetDescripcion() {
+    public String getDescripcion() {
         return descripcion;
     }
-    public void SetDescripcion(String descripcion) {
-    this.descripcion = descripcion;
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
-    public BigDecimal GetMonto() {
+    public BigDecimal getMonto() {
         return monto;
     }
-    public void SetMonto(BigDecimal monto) {
+    public void setMonto(BigDecimal monto) {
         this.monto = monto;
     }
 
-    public LocalDate GetFecha() {
+    public LocalDate getFecha() {
         return fecha;
     }
-    public void SetFecha(LocalDate fecha) {
+    public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
 
-    public Usuario Getusuario() {
+    public Usuario getUsuario() {
         return usuario;
     }
-    public void Setusuario(Usuario usuario) {
+    public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
     }
 
-    public Grupo Getgrupo() {
+    public Grupo getGrupo() {
         return grupo;
     }
-    public void Setgrupo(Grupo grupo) {
+    public void setGrupo(Grupo grupo) {
         this.grupo = grupo;
     }
 }
-
-
-
