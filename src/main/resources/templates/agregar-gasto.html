@@ -10,8 +10,6 @@
 
 <body>
 
-<!-- Encabezado -->
-
 <header>
 
     <a th:href="@{/grupo/{id}(id=${grupo.id})}">
@@ -22,8 +20,6 @@
 
 </header>
 
-
-<!-- Información del grupo -->
 
 <section>
 
@@ -37,16 +33,23 @@
 </section>
 
 
-<!-- Formulario -->
+<!-- Mensajes de error que puede mandar el controlador -->
+<p th:if="${param.error != null and param.error[0] == 'suma'}">
+    La suma de lo que pagó cada persona no coincide con el monto total del gasto.
+</p>
+
+<p th:if="${param.error != null and param.error[0] == 'pagos'}">
+    Hubo un problema con los pagadores del gasto, intenta de nuevo.
+</p>
+
 
 <main>
 
     <form
+            id="formGasto"
             th:action="@{/grupo/{id}/gasto(id=${grupo.id})}"
             method="post">
 
-
-        <!-- DESCRIPCIÓN -->
 
         <section>
 
@@ -69,23 +72,30 @@
         <br>
 
 
-        <!-- MONTO -->
-
         <section>
 
-            <label for="monto">
-                Monto
+            <label for="Monto">
+                Monto total
             </label>
 
             <br>
 
+            <!-- CAMBIO (estilo Nequi): el usuario solo teclea dígitos
+                 (ej: 5, 0, 0, 0) y el campo se formatea SOLO mientras
+                 escribe, mostrando "$5.000". El punto de miles no lo
+                 escribe la persona, lo pone el script (ver abajo).
+                 Por eso es type="text": un input type="number" no
+                 permite mostrar el símbolo "$" ni los puntos.
+
+                 Los montos aquí son siempre pesos enteros, sin
+                 centavos (igual que al transferir plata en Nequi). -->
             <input
-                    type="number"
-                    id="monto"
+                    type="text"
+                    id="montoTotal"
+                    class="input-monto-formateado"
                     name="monto"
                     placeholder="$ 0"
-                    min="0"
-                    step="0.01"
+                    inputmode="numeric"
                     required>
 
         </section>
@@ -94,8 +104,6 @@
         <br>
 
 
-        <!-- FECHA -->
-
         <section>
 
             <label for="fecha">
@@ -103,17 +111,6 @@
             </label>
 
             <br>
-
-            <!-- CORREGIDO: el usuario NO debe poder tocar la fecha, ni siquiera
-                 abriendo el calendario del navegador. Por eso son dos inputs:
-
-                 1) Uno solo VISUAL, deshabilitado ("disabled"), que muestra la fecha
-                    pero no se puede editar ni desde el calendario. Al estar "disabled",
-                    el navegador NO lo envía al servidor (por eso no tiene name="fecha").
-
-                 2) Uno oculto ("hidden"), invisible para el usuario, que sí tiene
-                    name="fecha" y sí viaja al backend con el mismo valor. Este es
-                    el que de verdad llega a tu @RequestParam LocalDate fecha. -->
 
             <input
                     type="date"
@@ -132,7 +129,7 @@
         <br>
 
 
-        <!-- QUIÉN PAGÓ -->
+        <!-- QUIÉN PAGÓ (CAMBIO Sprint 6, ampliación) -->
 
         <section>
 
@@ -141,25 +138,24 @@
             </h2>
 
             <p>
-                Selecciona una sola persona.
+                Marca a todas las personas que pusieron dinero para este
+                gasto, y escribe cuánto puso cada una.
             </p>
 
-
-            <!-- CORREGIDO: eran checkboxes con name="pagadores" (permitía varios).
-                 Un gasto lo paga UNA sola persona, así que usamos radio buttons:
-                 con el mismo "name" en todos, el navegador solo deja marcar uno.
-                 También el name pasa a ser "pagadorId", para que coincida
-                 exactamente con @RequestParam Long pagadorId del controlador. -->
+            <!-- CAMBIO: antes eran radio buttons (una sola persona).
+                 Ahora son checkboxes, porque puede haber VARIOS pagadores.
+                 Cada persona tiene, además, un campo de monto que solo
+                 tiene sentido llenar si esa persona está marcada. -->
 
             <div th:each="miembro : ${miembros}">
 
                 <label>
 
                     <input
-                            type="radio"
-                            name="pagadorId"
-                            th:value="${miembro.usuario.id}"
-                            required>
+                            type="checkbox"
+                            name="pagadoresId"
+                            class="checkbox-pagador"
+                            th:value="${miembro.usuario.id}">
 
                     <span th:text="${miembro.usuario.name}">
                             Nombre del usuario
@@ -167,17 +163,31 @@
 
                 </label>
 
+                <!-- name="montosPagados": junto con "pagadoresId" de arriba,
+                     forman las dos listas PARALELAS que espera el controlador.
+                     Ambas listas solo deben tener valores para quienes SÍ
+                     están marcados; el script se encarga de eso. -->
+                <input
+                        type="text"
+                        name="montosPagados"
+                        class="input-monto-pagador input-monto-formateado"
+                        placeholder="$ 0"
+                        inputmode="numeric"
+                        disabled>
+
                 <br>
 
             </div>
+
+            <!-- Mensaje en vivo: ayuda a la persona a ver si ya cuadró
+                 la suma antes de intentar guardar -->
+            <p id="mensajeSumaPagos"></p>
 
         </section>
 
 
         <br>
 
-
-        <!-- DIVIDIR ENTRE -->
 
         <section>
 
@@ -197,6 +207,7 @@
                     <input
                             type="checkbox"
                             name="participantes"
+                            class="checkbox-participante"
                             th:value="${miembro.usuario.id}">
 
                     <span th:text="${miembro.usuario.name}">
@@ -215,8 +226,6 @@
         <br>
 
 
-        <!-- INFORMACIÓN -->
-
         <section>
 
             <p>
@@ -231,8 +240,6 @@
         <br>
 
 
-        <!-- BOTÓN -->
-
         <button type="submit">
             Guardar gasto
         </button>
@@ -241,6 +248,146 @@
     </form>
 
 </main>
+
+
+<script>
+
+    // ============================================================
+    // PARTE 1 (ya existía): al marcar un pagador, se marca
+    // automáticamente esa misma persona en "Dividir entre".
+    // Sigue funcionando igual: se puede desmarcar a mano después,
+    // para el caso raro de alguien que paga pero no participa.
+    // ============================================================
+
+    const checkboxesPagador = document.querySelectorAll('.checkbox-pagador');
+
+    checkboxesPagador.forEach(function (checkboxPagador) {
+
+        checkboxPagador.addEventListener('change', function () {
+
+            const idPersona = checkboxPagador.value;
+
+            // Habilitar/deshabilitar su propio campo de monto:
+            // si no está marcado como pagador, no tiene sentido
+            // que se pueda escribir un monto para esa persona.
+            const inputMonto =
+                checkboxPagador.parentElement.nextElementSibling;
+
+            if (checkboxPagador.checked) {
+                inputMonto.disabled = false;
+            } else {
+                inputMonto.disabled = true;
+                inputMonto.value = '';
+            }
+
+            // Marcar automáticamente a esta persona en "Dividir entre"
+            if (checkboxPagador.checked) {
+
+                const checkboxesParticipante =
+                    document.querySelectorAll('.checkbox-participante');
+
+                checkboxesParticipante.forEach(function (checkboxParticipante) {
+                    if (checkboxParticipante.value === idPersona) {
+                        checkboxParticipante.checked = true;
+                    }
+                });
+            }
+
+            actualizarMensajeSuma();
+        });
+
+    });
+
+
+    // ============================================================
+    // PARTE 2 (CAMBIO: formato estilo Nequi): el usuario solo teclea
+    // dígitos, y el campo se formatea solo mientras escribe, mostrando
+    // "$5.000" en vez del número pelado. El punto de miles lo pone
+    // el script, no la persona.
+    // ============================================================
+
+    // Convierte lo que haya en el campo a un número real de JavaScript.
+    // Como el campo puede tener "$", puntos de miles, o estar vacío,
+    // primero quitamos TODO lo que no sea un dígito (\D = "no dígito"),
+    // y lo que queda son los números puros tecleados por la persona.
+    function obtenerNumeroReal(texto) {
+
+        if (!texto) {
+            return 0;
+        }
+
+        const soloDigitos = texto.replace(/\D/g, '');
+
+        if (soloDigitos === '') {
+            return 0;
+        }
+
+        return parseInt(soloDigitos, 10);
+    }
+
+    // Convierte un número real a su versión formateada para mostrar,
+    // ej: 5000 -> "$5.000". toLocaleString('es-CO') ya sabe poner
+    // el punto de miles correcto para Colombia.
+    function formatearComoPesos(numero) {
+        return '$' + numero.toLocaleString('es-CO');
+    }
+
+    // Se engancha a CADA input de monto (el total y los de cada
+    // pagador), para que todos se comporten igual mientras se escribe
+    function activarFormatoPesos(input) {
+
+        input.addEventListener('input', function () {
+
+            const numero = obtenerNumeroReal(input.value);
+
+            // Si la persona borró todo, dejamos el campo vacío
+            // en vez de mostrar "$0" forzado
+            input.value = numero === 0 ? '' : formatearComoPesos(numero);
+
+            actualizarMensajeSuma();
+        });
+    }
+
+    const inputMontoTotal = document.getElementById('montoTotal');
+    const inputsMontoPagador = document.querySelectorAll('.input-monto-pagador');
+    const mensajeSumaPagos = document.getElementById('mensajeSumaPagos');
+
+    activarFormatoPesos(inputMontoTotal);
+
+    inputsMontoPagador.forEach(function (input) {
+        activarFormatoPesos(input);
+    });
+
+    // Validación en vivo (ayuda visual, no reemplaza la del backend):
+    // compara el monto total contra la suma de los pagos marcados
+    function actualizarMensajeSuma() {
+
+        const total = obtenerNumeroReal(inputMontoTotal.value);
+
+        let sumaPagos = 0;
+
+        inputsMontoPagador.forEach(function (input) {
+            if (!input.disabled) {
+                sumaPagos += obtenerNumeroReal(input.value);
+            }
+        });
+
+        if (total === 0 && sumaPagos === 0) {
+            mensajeSumaPagos.textContent = '';
+            return;
+        }
+
+        if (sumaPagos === total) {
+            mensajeSumaPagos.textContent = '✓ Los pagos coinciden con el monto total.';
+        } else {
+            const diferencia = total - sumaPagos;
+            mensajeSumaPagos.textContent =
+                'Faltan ' + formatearComoPesos(diferencia) +
+                ' por asignar entre los pagadores.';
+        }
+    }
+
+</script>
 
 </body>
 

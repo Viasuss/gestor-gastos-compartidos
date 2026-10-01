@@ -34,15 +34,74 @@
 </header>
 
 <!-- ============================= -->
-<!-- TARJETA DE DEUDA -->
+<!-- TARJETA DE DEUDA (Sprint 6: ya conectada a DeudaService) -->
 <!-- ============================= -->
 
-<!-- PENDIENTE (HU10): el controlador todavía no calcula ni envía la deuda.
-     Por ahora dejamos el mismo texto que ya tenía la vista ("Mi deuda: $0"),
-     solo lo movemos a esta tarjeta para que quede en el lugar del Figma -->
+<!-- balanceTotal es la suma de todas las líneas de "deudas": puede ser
+     positivo (en total te deben), negativo (en total debes) o cero
+     (estás a paz y salvo en este grupo) -->
+
 <section>
-    <p>Mi deuda</p>
-    <p>$0</p>
+
+    <p th:if="${balanceTotal.signum() > 0}">
+        Te deben en total
+    </p>
+
+    <p th:if="${balanceTotal.signum() < 0}">
+        Debes en total
+    </p>
+
+    <p th:if="${balanceTotal.signum() == 0}">
+        Estás a paz y salvo
+    </p>
+
+    <!-- Mostramos el valor absoluto: el signo ya se explicó arriba
+         con el texto ("Te deben" / "Debes"), así que aquí no
+         repetimos el signo negativo -->
+    <!-- #numbers.formatDecimal(numero, mínimoDígitosEnteros, separadorMiles, decimales, separadorDecimal)
+         Con esto: 50000 se muestra como "50,000.00", no como el "50.0" crudo
+         que BigDecimal guarda internamente -->
+    <p th:text="'$' + ${#numbers.formatDecimal(balanceTotal.abs(), 1, 'COMMA', 0, 'POINT')}">
+        $0.00
+    </p>
+
+</section>
+
+<!-- ============================= -->
+<!-- DESGLOSE POR PERSONA (Sprint 6, nuevo) -->
+<!-- ============================= -->
+
+<section>
+
+    <h2>Detalle de tu deuda</h2>
+
+    <div th:if="${#lists.isEmpty(deudas)}">
+        <p>No tienes movimientos pendientes en este grupo.</p>
+    </div>
+
+    <ul th:unless="${#lists.isEmpty(deudas)}">
+
+        <li th:each="deuda : ${deudas}">
+
+            <!-- meDeben()/leDebo() ya vienen resueltos desde DeudaConPersona,
+                 así que aquí solo decidimos qué texto mostrar según el signo -->
+
+            <span th:if="${deuda.meDeben()}">
+                <strong th:text="${deuda.otraPersona.name}">Nombre</strong>
+                te debe
+                <span th:text="'$' + ${#numbers.formatDecimal(deuda.monto, 1, 'COMMA', 0, 'POINT')}">$0.00</span>
+            </span>
+
+            <span th:if="${deuda.leDebo()}">
+                Le debes a
+                <strong th:text="${deuda.otraPersona.name}">Nombre</strong>
+                <span th:text="'$' + ${#numbers.formatDecimal(deuda.monto.abs(), 1, 'COMMA', 0, 'POINT')}">$0.00</span>
+            </span>
+
+        </li>
+
+    </ul>
+
 </section>
 
 <!-- ============================= -->
@@ -94,11 +153,6 @@
 
     <!-- Lista de gastos -->
 
-    <!-- CORREGIDO: eran GetDescripcion(), GetMonto(), GetFecha(), Getusuario()
-         con mayúscula (nombres viejos, de antes de arreglar Gasto.java).
-         Ahora los getters reales son getDescripcion(), getMonto(), getFecha(),
-         getUsuario() en minúscula, así que Thymeleaf debe llamarlos así. -->
-
     <div th:unless="${#lists.isEmpty(gastos)}">
 
         <article th:each="gasto : ${gastos}">
@@ -110,8 +164,8 @@
             <p>
                 <strong>Monto:</strong>
 
-                <span th:text="${gasto.getMonto()}">
-                    $0
+                <span th:text="'$' + ${#numbers.formatDecimal(gasto.getMonto(), 1, 'COMMA', 0, 'POINT')}">
+                    $0.00
                 </span>
             </p>
 
@@ -123,13 +177,23 @@
                 </span>
             </p>
 
+            <!-- CAMBIO (Sprint 6, ampliación): un gasto ya puede tener
+                 VARIOS pagadores, cada uno con su propio monto (por eso
+                 Gasto ya no tiene gasto.getUsuario()). Los pagos de
+                 cada gasto llegan en el mapa "pagosPorGasto", que arma
+                 el controlador usando el id de cada gasto como llave. -->
+
             <p>
                 <strong>Pagó:</strong>
-
-                <span th:text="${gasto.getUsuario().getName()}">
-                    Usuario
-                </span>
             </p>
+
+            <ul>
+                <li th:each="pago : ${pagosPorGasto.get(gasto.getId())}">
+                    <span th:text="${pago.usuario.name}">Usuario</span>
+                    —
+                    <span th:text="'$' + ${#numbers.formatDecimal(pago.monto, 1, 'COMMA', 0, 'POINT')}">$0.00</span>
+                </li>
+            </ul>
 
             <hr>
 

@@ -12,8 +12,12 @@ public class Gasto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @ManyToOne
-    private Usuario usuario;
+    // ELIMINADO (Sprint 6, ampliación): antes había un único
+    // "private Usuario usuario;" que representaba "quién pagó".
+    // Ahora un gasto puede tener VARIOS pagadores, así que esa
+    // información ya no vive aquí: vive en la nueva tabla PagoGasto,
+    // con una fila por cada persona que puso dinero en este gasto.
+
     @ManyToOne
     private Grupo grupo;
 
@@ -25,11 +29,10 @@ public class Gasto {
 
     }
 
-    public Gasto(String descripcion, BigDecimal monto, LocalDate fecha, Usuario UsuarioPago, Grupo GrupoPertenece) {
+    public Gasto(String descripcion, BigDecimal monto, LocalDate fecha, Grupo GrupoPertenece) {
         this.descripcion = descripcion;
         this.monto = monto;
         this.fecha = fecha;
-        this.usuario = UsuarioPago;
         this.grupo = GrupoPertenece;
     }
 
@@ -59,13 +62,6 @@ public class Gasto {
     }
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
     }
 
     public Grupo getGrupo() {

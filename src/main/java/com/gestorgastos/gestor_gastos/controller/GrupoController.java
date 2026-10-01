@@ -46,16 +46,13 @@ public class GrupoController {
             HttpSession session,
             Model model) {
 
-        // Verificar sesión
         if (session.getAttribute("usuario") == null) {
             return "redirect:/login";
         }
 
-        // Obtener lista temporal de correos
         List<String> usuariosTemporales =
                 (List<String>) session.getAttribute("usuariosTemporales");
 
-        // Si todavía no existe la lista, crearla
         if (usuariosTemporales == null) {
 
             usuariosTemporales = new ArrayList<>();
@@ -84,25 +81,35 @@ public class GrupoController {
             @RequestParam String email,
             HttpSession session) {
 
-        // Verificar sesión
-        if (session.getAttribute("usuario") == null) {
+        Usuario usuarioActual =
+                (Usuario) session.getAttribute("usuario");
+
+        if (usuarioActual == null) {
             return "redirect:/login";
         }
 
-        // Buscar usuario registrado
+        // NUEVO (bug corregido): no dejar agregar el propio correo.
+        // Antes solo se validaba que el correo no estuviera repetido
+        // EN LA LISTA, pero nunca se comparaba contra el usuario en
+        // sesión. Por eso alguien podía "invitarse a sí mismo": el
+        // creador ya queda como MIEMBRO automáticamente al crear el
+        // grupo, así que además terminaba duplicado como PENDIENTE.
+        // equalsIgnoreCase para que "Johan@Gmail.com" y "johan@gmail.com"
+        // se traten como el mismo correo.
+        if (email.equalsIgnoreCase(usuarioActual.getEmail())) {
+            return "redirect:/grupo/crear?error=propio";
+        }
+
         Usuario usuario =
                 usuarioRepository.findByEmail(email).orElse(null);
 
-        // Si no existe, regresar a crear grupo
         if (usuario == null) {
             return "redirect:/grupo/crear?error=usuario";
         }
 
-        // Obtener lista temporal
         List<String> usuariosTemporales =
                 (List<String>) session.getAttribute("usuariosTemporales");
 
-        // Crear lista si no existe
         if (usuariosTemporales == null) {
 
             usuariosTemporales = new ArrayList<>();
@@ -113,10 +120,35 @@ public class GrupoController {
             );
         }
 
-        // Evitar agregar el mismo correo dos veces
         if (!usuariosTemporales.contains(email)) {
 
             usuariosTemporales.add(email);
+        }
+
+        return "redirect:/grupo/crear";
+    }
+
+
+    // ==========================================
+    // QUITAR USUARIO DE LA LISTA TEMPORAL (NUEVO)
+    // ==========================================
+
+    // Botón "x" del Figma: permite quitar a alguien de "Personas agregadas"
+    // antes de crear el grupo, sin tener que recargar todo el formulario.
+    @PostMapping("/grupo/quitar-usuario")
+    public String quitarUsuarioTemporal(
+            @RequestParam String email,
+            HttpSession session) {
+
+        if (session.getAttribute("usuario") == null) {
+            return "redirect:/login";
+        }
+
+        List<String> usuariosTemporales =
+                (List<String>) session.getAttribute("usuariosTemporales");
+
+        if (usuariosTemporales != null) {
+            usuariosTemporales.remove(email);
         }
 
         return "redirect:/grupo/crear";
@@ -132,7 +164,6 @@ public class GrupoController {
             @RequestParam String name,
             HttpSession session) {
 
-        // Obtener usuario actual
         Usuario usuarioActual =
                 (Usuario) session.getAttribute("usuario");
 
@@ -140,7 +171,6 @@ public class GrupoController {
             return "redirect:/login";
         }
 
-        // Crear grupo
         Grupo grupo = new Grupo();
 
         grupo.setName(name);
@@ -195,7 +225,6 @@ public class GrupoController {
             }
         }
 
-        // Limpiar lista temporal
         session.removeAttribute("usuariosTemporales");
 
         return "redirect:/inicio";

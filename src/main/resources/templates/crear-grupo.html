@@ -38,8 +38,16 @@
 <br>
 
 <!-- Mensaje de error -->
-<p th:if="${error}"
-   th:text="${error}">
+<!-- NUEVO: mensaje específico para el bug de autoinvitarse.
+     Como el controlador ahora manda ?error=propio en ese caso,
+     agregamos un th:if aparte para mostrar un texto claro,
+     distinto del error genérico de "usuario no encontrado". -->
+<p th:if="${param.error != null and param.error[0] == 'propio'}">
+    No puedes agregarte a ti mismo, ya perteneces al grupo como creador.
+</p>
+
+<p th:if="${param.error != null and param.error[0] == 'usuario'}">
+    Ese correo no pertenece a ningún usuario registrado.
 </p>
 
 <!-- Mensaje de éxito -->
@@ -57,6 +65,21 @@
     <li th:each="email : ${usuariosTemporales}">
 
         <span th:text="${email}"></span>
+
+        <!-- NUEVO: botón "x" del Figma, para quitar a la persona
+             de la lista antes de crear el grupo. Es un form aparte
+             (no un link) porque quitar algo es una ACCIÓN que
+             modifica datos (la lista en sesión), y esas acciones
+             deben ir por POST, no por un simple GET de un link. -->
+        <form th:action="@{/grupo/quitar-usuario}"
+              method="post"
+              style="display:inline;">
+
+            <input type="hidden" name="email" th:value="${email}">
+
+            <button type="submit">✕</button>
+
+        </form>
 
     </li>
 
@@ -100,4 +123,3 @@
 </body>
 
 </html>
-```

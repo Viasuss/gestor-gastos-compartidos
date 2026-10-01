@@ -4,14 +4,17 @@
 
 ```mermaid
 erDiagram
-
     USUARIO ||--o{ GRUPO : crea
     USUARIO ||--o{ MIEMBROGRUPO : participa
     GRUPO ||--o{ MIEMBROGRUPO : incluye
-    USUARIO ||--o{ GASTO : paga
+
     GRUPO ||--o{ GASTO : contiene
-    GASTO ||--o{ GASTOPARTICIPANTE : divide
-    USUARIO ||--o{ GASTOPARTICIPANTE : debe
+    GASTO ||--o{ GASTOPARTICIPANTE : incluye
+    USUARIO ||--o{ GASTOPARTICIPANTE : participa
+    GRUPO ||--o{ GASTOPARTICIPANTE : pertenece
+
+    GASTO ||--o{ PAGOGASTO : registra
+    USUARIO ||--o{ PAGOGASTO : realiza
 
     USUARIO {
         long id PK
@@ -28,7 +31,7 @@ erDiagram
     }
 
     MIEMBROGRUPO {
-        long id PK
+        Long id PK
         long usuario_id FK
         long grupo_id FK
         EstadoMiembro estado
@@ -39,14 +42,21 @@ erDiagram
         string descripcion
         BigDecimal monto
         LocalDate fecha
-        long usuario_id FK
         long grupo_id FK
     }
 
     GASTOPARTICIPANTE {
         long id PK
         long usuario_id FK
+        long grupo_id FK
         long gasto_id FK
+    }
+
+    PAGOGASTO {
+        long id PK
+        long gasto_id FK
+        long usuario_id FK
+        BigDecimal monto
     }
 ```
 

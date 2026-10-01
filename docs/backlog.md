@@ -20,16 +20,16 @@
 ## Épica 3: Gastos
 
 | ID | Historia de usuario | Estado | Asignado |
-|----|---|---|---|
-| HU07 | Como usuario, quiero agregar un gasto dentro de un grupo (descripción, monto, quién pagó), para registrar lo que se gastó. | Pendiente | Por asignar |
-| HU08 | Como usuario, quiero elegir entre quiénes se divide un gasto (todos o algunos del grupo), para que el cálculo sea justo. | Pendiente | Por asignar |
-| HU09 | Como usuario, quiero ver el historial de gastos de un grupo ordenado por fecha, para revisar en qué se ha gastado. | Pendiente | Por asignar |
+|----|---|--------|----------|
+| HU07 | Como usuario, quiero agregar un gasto dentro de un grupo (descripción, monto, quién pagó), para registrar lo que se gastó. | Listo  | Johan    |
+| HU08 | Como usuario, quiero elegir entre quiénes se divide un gasto (todos o algunos del grupo), para que el cálculo sea justo. | Listo  | Wilmer   |
+| HU09 | Como usuario, quiero ver el historial de gastos de un grupo ordenado por fecha, para revisar en qué se ha gastado. | Listo  | Wilmer   |
 
 ## Épica 4: Cálculo de deudas
 
 | ID | Historia de usuario | Estado | Asignado |
-|----|---|---|---|
-| HU10 | Como usuario, quiero ver cuánto le debo a cada persona del grupo (o cuánto me deben), para saber mi situación financiera dentro del grupo. | Pendiente | Por asignar |
+|----|---|--------|----------|
+| HU10 | Como usuario, quiero ver cuánto le debo a cada persona del grupo (o cuánto me deben), para saber mi situación financiera dentro del grupo. | Listo  | Johan    |
  
 ---
 
@@ -71,7 +71,10 @@
 - [x] Validación de seguridad: solo el usuario invitado puede aceptar/rechazar su propia invitación — **Johan**
 - [x] Vista `invitaciones.html` — **Johan**
 - [x] Diseño en Figma de las pantallas principales de la app (login, registro, inicio, mis grupos, detalle de grupo) — **Johan**
-
+### sprint 5
+- [x] crear logica bakend de negocio con GastoController - **johan**
+- [x] Vista agregar-gasto.html - **wilmer**
+- [x] HU09: agregar en grupo.html - **wilmer**
 
 
 

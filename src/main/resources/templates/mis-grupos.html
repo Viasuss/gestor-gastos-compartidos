@@ -33,8 +33,31 @@
         </strong>
 
         <span th:text="' - Estado: ' + ${miembro.estado}">
-        Estado
-    </span>
+            Estado
+        </span>
+
+        <!-- NUEVO: balance real, solo tiene sentido mostrarlo si el
+             usuario ya es MIEMBRO (no para invitaciones pendientes o
+             rechazadas, que no tienen deudas calculadas en el mapa) -->
+        <span th:if="${miembro.estado.name() == 'MIEMBRO'}">
+
+            <span th:with="balance=${balancePorGrupo.get(miembro.grupo.id)}">
+
+                <span th:if="${balance.signum() > 0}"
+                      th:text="'+ $' + ${#numbers.formatDecimal(balance, 1, 'COMMA', 0, 'POINT')} + ' (te deben)'">
+                </span>
+
+                <span th:if="${balance.signum() < 0}"
+                      th:text="'- $' + ${#numbers.formatDecimal(balance.abs(), 1, 'COMMA', 0, 'POINT')} + ' (debes)'">
+                </span>
+
+                <span th:if="${balance.signum() == 0}">
+                    $0
+                </span>
+
+            </span>
+
+        </span>
 
         <a th:if="${miembro.estado.name() == 'MIEMBRO'}"
            th:href="@{/grupo/{id}(id=${miembro.grupo.id})}">
