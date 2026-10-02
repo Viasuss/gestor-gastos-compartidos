@@ -68,39 +68,99 @@
 </section>
 
 <!-- ============================= -->
-<!-- DESGLOSE POR PERSONA (Sprint 6, nuevo) -->
+<!-- DETALLE DE DEUDAS -->
 <!-- ============================= -->
 
 <section>
 
-    <h2>Detalle de tu deuda</h2>
+    <h2>Detalle de mis deudas</h2>
+
+    <!-- Cuando no hay deudas -->
 
     <div th:if="${#lists.isEmpty(deudas)}">
-        <p>No tienes movimientos pendientes en este grupo.</p>
+
+        <p>
+            No tienes movimientos pendientes en este grupo.
+        </p>
+
     </div>
 
-    <ul th:unless="${#lists.isEmpty(deudas)}">
 
-        <li th:each="deuda : ${deudas}">
+    <!-- Cuando sí existen deudas -->
 
-            <!-- meDeben()/leDebo() ya vienen resueltos desde DeudaConPersona,
-                 así que aquí solo decidimos qué texto mostrar según el signo -->
+    <div th:unless="${#lists.isEmpty(deudas)}">
 
-            <span th:if="${deuda.meDeben()}">
-                <strong th:text="${deuda.otraPersona.name}">Nombre</strong>
-                te debe
-                <span th:text="'$' + ${#numbers.formatDecimal(deuda.monto, 1, 'COMMA', 0, 'POINT')}">$0.00</span>
-            </span>
+        <article th:each="deuda : ${deudas}">
 
-            <span th:if="${deuda.leDebo()}">
-                Le debes a
-                <strong th:text="${deuda.otraPersona.name}">Nombre</strong>
-                <span th:text="'$' + ${#numbers.formatDecimal(deuda.monto.abs(), 1, 'COMMA', 0, 'POINT')}">$0.00</span>
-            </span>
+            <!-- Dinero que te deben -->
 
-        </li>
+            <div th:if="${deuda.meDeben()}">
 
-    </ul>
+                <h3>
+                    Te deben
+                </h3>
+
+                <p>
+
+                    <strong th:text="${deuda.otraPersona.name}">
+                        Nombre
+                    </strong>
+
+                    te debe
+
+                    <strong
+                            th:text="'$' + ${#numbers.formatDecimal(
+                                deuda.monto,
+                                1,
+                                'COMMA',
+                                0,
+                                'POINT'
+                            )}">
+                        $0
+                    </strong>
+
+                </p>
+
+            </div>
+
+
+            <!-- Dinero que tú debes -->
+
+            <div th:if="${deuda.leDebo()}">
+
+                <h3>
+                    Debes
+                </h3>
+
+                <p>
+
+                    Le debes a
+
+                    <strong th:text="${deuda.otraPersona.name}">
+                        Nombre
+                    </strong>
+
+                    <strong
+                            th:text="'$' + ${#numbers.formatDecimal(
+                                deuda.monto.abs(),
+                                1,
+                                'COMMA',
+                                0,
+                                'POINT'
+                            )}">
+                        $0
+                    </strong>
+
+                </p>
+
+            </div>
+
+
+            <hr>
+
+        </article>
+
+    </div>
 
 </section>
 
