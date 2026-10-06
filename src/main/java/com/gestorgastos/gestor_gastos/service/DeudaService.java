@@ -184,7 +184,7 @@ public class DeudaService {
 
                     // Solo nos importa registrar el movimiento si involucra
                     // a nuestro "usuario" (como deudor o como acreedor)
-                    if (idDeudor == usuario.getId()) {
+                    if (idDeudor.equals(usuario.getId())) {
                         // Nuestro usuario le debe a este acreedor
                         Usuario acreedor = personasDelGasto.get(idAcreedor);
                         acumular(resumenPorPersona, acreedor, montoAsignado.negate());
