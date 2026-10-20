@@ -1,133 +1,77 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>Inicio - Gestor de Gastos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+    <title>Inicio · Partly</title>
 </head>
-
 <body>
+<main class="app">
 
-<!-- ============================= -->
-<!-- BARRA SUPERIOR -->
-<!-- ============================= -->
+    <!-- BARRA SUPERIOR: logo + inicial del usuario -->
+    <header class="topbar-home">
+        <span class="brand">
+            <img class="brand-ring" th:src="@{/img/logo-icon.svg}" alt="">
+            <span>partly</span>
+        </span>
+        <span class="avatar avatar-lg"
+              th:text="${#strings.toUpperCase(#strings.substring(session.usuario.name, 0, 1))}">J</span>
+    </header>
 
-<!-- "Cerrar sesión" va aquí: en una página web normal, las acciones de
-     cuenta (salir, perfil, configuración) viven en el encabezado/nav,
-     no mezcladas entre los botones de acción principal. El Figma no lo
-     muestra en ningún lado de esta pantalla, así que lo ubicamos donde
-     tendría sentido en una web real. -->
+    <h1 class="title">Hola, <span th:text="${session.usuario.name}">Johan</span></h1>
+    <p class="subtitle">Aquí va tu resumen de hoy</p>
 
-<header>
+    <!-- BALANCE TOTAL (viene de DeudaService.calcularBalanceGeneral) -->
+    <section class="balance">
+        <p class="balance-label">BALANCE TOTAL</p>
+        <div class="balance-row">
+            <div>
+                <small>Te deben</small>
+                <strong th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalLeDeben, 1, 'POINT', 0, 'COMMA')}">$0</strong>
+            </div>
+            <div class="right">
+                <small>Debes</small>
+                <strong th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalDebe, 1, 'POINT', 0, 'COMMA')}">$0</strong>
+            </div>
+        </div>
+    </section>
 
-    <strong>Gestor de Gastos Compartidos</strong>
+    <!-- ACCIONES RÁPIDAS -->
+    <h3 class="section-title" style="margin-top:22px;">Acciones rápidas</h3>
+    <div class="quick-grid">
+        <a class="quick quick-primary" href="/grupo/crear"><span class="quick-icon"></span>Crear grupo</a>
+        <a class="quick" href="/mis-grupos"><span class="quick-icon"></span>Mis grupos</a>
+    </div>
+    <a class="quick quick-wide" href="/invitaciones"><span class="quick-icon has-dot"></span>Mis invitaciones</a>
 
-    <a href="/logout">
-        Cerrar sesión
-    </a>
-
-</header>
-
-
-<h1>
-    Hola,
-    <span th:text="${session.usuario.name}"></span>
-</h1>
-
-<p>Aquí va tu resumen de hoy.</p>
-
-
-<!-- ============================= -->
-<!-- BALANCE TOTAL (NUEVO: ya conectado a DeudaService) -->
-<!-- ============================= -->
-
-<!-- balanceGeneral viene del controlador, calculado con
-     DeudaService.calcularBalanceGeneral(). Son dos números
-     INDEPENDIENTES (no se netean entre sí): la suma de lo que te
-     deben en todos tus grupos, y por separado, la suma de lo que
-     debes en todos tus grupos. -->
-
-<section>
-
-    <p>BALANCE TOTAL</p>
-
-    <div>
-        <p>Te deben</p>
-        <p th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalLeDeben, 1, 'COMMA', 0, 'POINT')}">
-            $0
-        </p>
+    <!-- TUS GRUPOS -->
+    <div class="section-head">
+        <h3>Tus grupos</h3>
+        <a href="/mis-grupos">Ver todos</a>
     </div>
 
-    <div>
-        <p>Debes</p>
-        <p th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalDebe, 1, 'COMMA', 0, 'POINT')}">
-            $0
-        </p>
+    <div class="empty" th:if="${#lists.isEmpty(gruposDestacados)}">
+        Todavía no perteneces a ningún grupo.
     </div>
 
-</section>
+    <div th:unless="${#lists.isEmpty(gruposDestacados)}">
+        <div class="group-row" th:each="miembro : ${gruposDestacados}">
+            <span class="group-icon">👥</span>
+            <div class="group-info">
+                <p class="group-name" th:text="${miembro.grupo.name}">Nombre del grupo</p>
+            </div>
+            <a class="stretched" th:href="@{/grupo/{id}(id=${miembro.grupo.id})}" aria-label="Abrir grupo"></a>
+        </div>
+    </div>
 
+    <!-- CERRAR SESIÓN -->
+    <a class="btn btn-soft-danger btn-block" href="/logout" style="margin-top:28px;">⏻ Cerrar sesión</a>
 
-<br>
-
-
-<h3>Acciones rápidas</h3>
-
-<a href="/grupo/crear">
-    <button type="button">Crear grupo</button>
-</a>
-
-<br>
-<br>
-
-<a href="/mis-grupos">
-    <button type="button">Mis grupos</button>
-</a>
-
-<br>
-<br>
-
-<a href="/invitaciones">
-    <button type="button">Mis invitaciones</button>
-</a>
-
-<br>
-<br>
-
-
-<!-- ============================= -->
-<!-- TUS GRUPOS -->
-<!-- ============================= -->
-
-<!-- Solo nombre: el monto de deuda por grupo en ESTA lista (el "Ver
-     todos" lleva a mis-grupos.html, que es donde sí se calcula y
-     muestra el monto real de cada grupo) -->
-
-<h3>
-    Tus grupos
-    <a href="/mis-grupos">Ver todos</a>
-</h3>
-
-<div th:if="${#lists.isEmpty(gruposDestacados)}">
-    <p>Todavía no perteneces a ningún grupo.</p>
-</div>
-
-<ul th:unless="${#lists.isEmpty(gruposDestacados)}">
-
-    <li th:each="miembro : ${gruposDestacados}">
-
-        <a th:href="@{/grupo/{id}(id=${miembro.grupo.id})}">
-
-            <strong th:text="${miembro.grupo.name}">
-                Nombre del grupo
-            </strong>
-
-        </a>
-
-    </li>
-
-</ul>
-
+</main>
 </body>
-
 </html>

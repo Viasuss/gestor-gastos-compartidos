@@ -1,0 +1,350 @@
+/* =========================================================
+   PARTLY — hoja de estilos única (modo claro + modo oscuro)
+   El modo se elige solo según el sistema del usuario.
+   ========================================================= */
+
+
+/* =========================================================
+   PARTE 1 — COLORES
+   ========================================================= */
+
+/* ---------- MODO CLARO (el de por defecto) ---------- */
+:root {
+    --bg: #fcf8f2;              /* fondo crema */
+    --surface: #ffffff;         /* tarjetas */
+    --surface-2: #f6f1e8;
+    --border: #ece5d8;
+    --text: #14211c;
+    --muted: #7b837e;
+
+    --primary: #0f4c3a;         /* verde oscuro de los botones */
+    --primary-hover: #0b3c2e;
+    --on-primary: #ffffff;      /* texto sobre el botón */
+    --accent: #2dbe7e;
+
+    --tile: #dcf2e3;            /* cuadrito de ícono de grupo */
+    --positive: #1f9d63;
+    --negative: #e5594a;
+    --danger-bg: #fde4df;
+    --danger-text: #d2473a;
+    --info-bg: #e3f4ea;
+    --info-text: #0f4c3a;
+
+    /* tarjeta verde de "Balance total" */
+    --balance-bg: linear-gradient(135deg, #0f5a45 0%, #0a3d2f 100%);
+
+    /* tarjeta oscura del detalle de grupo */
+    --hero-bg: #151a19;
+    --hero-text: #ffffff;
+    --hero-muted: #9aa5a0;
+    --hero-avatar: #2a3331;
+    --hero-pos: #6fe0a8;
+    --hero-neg: #ff8c7e;
+
+    /* chips de integrantes y círculo del botón "Crear grupo" */
+    --chip-bg: #dcf2e3;
+    --chip-text: #0f4c3a;
+    --quick-icon-on-primary: #2dbe7e;
+
+    --shadow: 0 1px 2px rgba(20, 33, 28, .04);
+    --radius: 14px;
+    --radius-sm: 10px;
+    color-scheme: light;
+}
+
+/* ---------- MODO OSCURO (solo cambia los colores) ---------- */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #121614;
+        --surface: #1a1f1d;
+        --surface-2: #222826;
+        --border: #2b322f;
+        --text: #f1f5f3;
+        --muted: #8d9792;
+
+        --primary: #44d68f;       /* verde brillante */
+        --primary-hover: #5be0a0;
+        --on-primary: #07251a;    /* texto oscuro sobre el verde */
+        --accent: #44d68f;
+
+        --tile: #2a312e;
+        --positive: #44d68f;
+        --negative: #ff6b5b;
+        --danger-bg: #3b1d1a;
+        --danger-text: #ff7b6b;
+        --info-bg: #1b2a24;
+        --info-text: #44d68f;
+
+        --balance-bg: linear-gradient(135deg, #1f8a62 0%, #17694c 100%);
+
+        --hero-bg: linear-gradient(135deg, #1f8a62 0%, #17694c 100%);
+        --hero-text: #ffffff;
+        --hero-muted: rgba(255, 255, 255, .75);
+        --hero-avatar: rgba(0, 0, 0, .25);
+        --hero-pos: #dcffee;
+        --hero-neg: #ffd0c9;
+
+        --chip-bg: #44d68f;
+        --chip-text: #07251a;
+        --quick-icon-on-primary: rgba(0, 0, 0, .25);
+
+        --shadow: none;
+        color-scheme: dark;
+    }
+}
+
+
+/* =========================================================
+   PARTE 2 — ESTILOS (iguales para los dos modos)
+   ========================================================= */
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.app {
+    max-width: 440px;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 28px 20px 40px;
+}
+
+h1, h2, h3, p { margin: 0; }
+a { color: var(--primary); font-weight: 600; text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul { list-style: none; margin: 0; padding: 0; }
+small { color: var(--muted); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Tipografía ---------- */
+.title { font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.subtitle { margin-top: 4px; font-size: 12px; color: var(--muted); }
+.section-title { font-size: 13px; font-weight: 700; margin: 22px 0 8px; }
+.hint { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.muted { color: var(--muted); }
+
+/* ---------- Marca ---------- */
+.logo-icon { width: 44px; height: 44px; display: block; margin-bottom: 14px; }
+.brand { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; color: var(--text); }
+.brand-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.auth-top { padding-top: 40px; }
+
+/* ---------- Barra superior ---------- */
+.topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.topbar h1 { font-size: 15px; font-weight: 700; }
+.back {
+    display: inline-grid; place-items: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    font-size: 18px; color: var(--text); text-decoration: none;
+}
+.back:hover { background: var(--surface-2); text-decoration: none; }
+.topbar-home { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+
+/* ---------- Avatares ---------- */
+.avatar {
+    flex: none; display: inline-grid; place-items: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--primary); color: var(--on-primary);
+    font-size: 12px; font-weight: 700;
+}
+.avatar-lg { width: 36px; height: 36px; font-size: 13px; }
+.avatar-sm { width: 22px; height: 22px; font-size: 10px; }
+.avatar-chip { background: var(--chip-bg); color: var(--chip-text); }
+
+/* ---------- Formularios ---------- */
+.field { margin-bottom: 14px; }
+.field label, .label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
+
+input[type="text"], input[type="email"], input[type="password"], input[type="date"] {
+    width: 100%; padding: 12px 14px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font: inherit; font-size: 13px;
+}
+input::placeholder { color: var(--muted); opacity: .8; }
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45, 190, 126, .18); }
+input:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; }
+
+.input-row { display: flex; gap: 8px; }
+.input-row input { flex: 1; min-width: 0; }
+
+/* ---------- Botones ---------- */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 13px 18px; border: 1px solid transparent; border-radius: var(--radius-sm);
+    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+    text-decoration: none; transition: background .15s, border-color .15s;
+}
+.btn:hover { text-decoration: none; }
+.btn-block { display: flex; width: 100%; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-soft-danger { background: var(--danger-bg); color: var(--danger-text); }
+.btn-sm { padding: 9px 14px; font-size: 12px; }
+.btn-icon {
+    width: 28px; height: 28px; padding: 0; background: none; border: 0;
+    color: var(--negative); font-size: 14px; cursor: pointer; border-radius: 50%;
+}
+.btn-icon:hover { background: var(--danger-bg); }
+
+/* ---------- Separador "o" ---------- */
+.divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 16px; color: var(--muted); font-size: 11px; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+.auth-footer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 14px; }
+.legal { text-align: center; font-size: 10px; color: var(--muted); margin-top: 14px; }
+
+/* ---------- Mensajes ---------- */
+.alert { padding: 10px 12px; border-radius: var(--radius-sm); font-size: 12px; margin-bottom: 14px; background: var(--danger-bg); color: var(--danger-text); }
+.alert-ok { background: var(--info-bg); color: var(--positive); }
+.error-inline { display: none; margin-top: 6px; font-size: 11px; color: var(--negative); }
+
+/* ---------- Tarjetas ---------- */
+.card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow);
+}
+.card + .card, .stack > * + * { margin-top: 10px; }
+
+/* Balance verde (inicio) */
+.balance {
+    margin-top: 18px; padding: 16px; border-radius: 18px; color: #fff;
+    background: var(--balance-bg);
+}
+.balance-label { font-size: 9px; font-weight: 700; letter-spacing: .08em; opacity: .8; margin-bottom: 14px; }
+.balance-row { display: flex; justify-content: space-between; align-items: flex-end; }
+.balance-row small { display: block; color: rgba(255,255,255,.75); font-size: 11px; }
+.balance-row strong { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.balance-row .right { text-align: right; }
+
+/* Tarjeta del detalle de grupo */
+.hero {
+    background: var(--hero-bg); color: var(--hero-text);
+    border-radius: 18px; padding: 18px; margin-bottom: 14px;
+}
+.hero-label { font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--hero-muted); }
+.hero-amount { font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin: 6px 0 14px; }
+.hero-rows { border-top: 1px solid rgba(255,255,255,.12); padding-top: 12px; }
+.hero-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12px; }
+.hero-row .grow { flex: 1; }
+.hero-row .avatar { background: var(--hero-avatar); color: #fff; }
+.hero-pos { color: var(--hero-pos); font-weight: 700; }
+.hero-neg { color: var(--hero-neg); font-weight: 700; }
+.hero-empty { color: var(--hero-muted); font-size: 12px; }
+
+/* ---------- Acciones rápidas ---------- */
+.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.quick {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    padding: 16px 10px; border-radius: var(--radius);
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    font-size: 12px; font-weight: 600; text-align: center; text-decoration: none;
+}
+.quick:hover { text-decoration: none; background: var(--surface-2); }
+.quick-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--tile); }
+.quick-primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.quick-primary:hover { background: var(--primary-hover); }
+.quick-primary .quick-icon { background: var(--quick-icon-on-primary); }
+.quick-wide { flex-direction: row; justify-content: flex-start; padding: 12px 14px; }
+.quick-wide .quick-icon { position: relative; }
+.quick-wide .quick-icon.has-dot::after {
+    content: ""; position: absolute; top: -2px; right: -2px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--negative);
+}
+
+/* ---------- Encabezado de sección con enlace ---------- */
+.section-head { display: flex; justify-content: space-between; align-items: baseline; margin: 22px 0 10px; }
+.section-head h3 { font-size: 13px; font-weight: 700; }
+.section-head a { font-size: 11px; }
+
+/* ---------- Filas de grupo ---------- */
+.group-row {
+    position: relative; display: flex; align-items: center; gap: 12px;
+    padding: 12px; margin-bottom: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.group-icon {
+    flex: none; display: grid; place-items: center;
+    width: 36px; height: 36px; border-radius: 10px; background: var(--tile); font-size: 16px;
+}
+.group-info { flex: 1; min-width: 0; }
+.group-name { font-weight: 700; font-size: 13px; }
+.group-sub { font-size: 11px; color: var(--muted); }
+.group-amount { text-align: right; font-weight: 700; font-size: 13px; }
+.group-amount small { display: block; font-weight: 500; font-size: 10px; }
+.pos { color: var(--positive); }
+.neg { color: var(--negative); }
+.stretched { position: absolute; inset: 0; border-radius: var(--radius); }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 10px; font-weight: 600; }
+
+/* ---------- Personas (crear grupo / integrantes) ---------- */
+.person-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.person-row .grow { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.person-row form { margin: 0; }
+.chips { display: flex; align-items: center; gap: 6px; margin: 4px 0 14px; font-size: 11px; color: var(--muted); }
+.empty { padding: 16px; text-align: center; font-size: 12px; color: var(--muted); }
+
+/* ---------- Historial de gastos ---------- */
+.expense { padding: 12px 14px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.expense-top { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: 13px; }
+.expense-sub { margin-top: 2px; font-size: 11px; color: var(--muted); }
+
+/* ---------- Invitaciones ---------- */
+.invite { padding: 14px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.invite-top { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; font-size: 12px; }
+.invite-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.invite-actions form { margin: 0; }
+
+/* ---------- Agregar gasto ---------- */
+.group-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; margin-bottom: 18px; background: var(--info-bg); color: var(--info-text); border-radius: 999px; font-size: 11px; font-weight: 600; }
+.amount-input { font-size: 22px !important; font-weight: 700; padding: 14px !important; }
+.check-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+}
+.check-row label { display: flex; align-items: center; gap: 10px; flex: 1; margin: 0; cursor: pointer; font-weight: 500; }
+.check-row input[type="text"] { width: 96px; flex: none; padding: 8px 10px; text-align: right; background: var(--surface-2); }
+/* Fila marcada: borde verde (como en el diseño) */
+.check-row:has(input[type="checkbox"]:checked) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+}
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+.sum-msg { min-height: 16px; margin-top: 4px; font-size: 11px; color: var(--muted); }
+.info-box { display: flex; gap: 8px; align-items: center; padding: 12px; margin: 14px 0 18px; border-radius: var(--radius-sm); background: var(--info-bg); color: var(--info-text); font-size: 11px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* =========================================================
+   LOGO PARTLY (anillo + palabra)
+   ========================================================= */
+
+/* Logo grande (login) */
+.logo-lockup { display: flex; align-items: center; gap: 12px; }
+.logo-ring { width: 44px; height: 44px; display: block; }
+.logo-word {
+    font-size: 30px; font-weight: 800; letter-spacing: -.03em;
+    color: var(--text); line-height: 1;
+}
+.logo-tagline { margin: 8px 0 26px; font-size: 11px; color: var(--muted); }
+
+/* Logo pequeño (barra superior de inicio) */
+.brand { gap: 8px; font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+.brand-ring { width: 24px; height: 24px; display: block; }
