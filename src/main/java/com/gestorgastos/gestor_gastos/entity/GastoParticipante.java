@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 public class GastoParticipante {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public long id;
+    private Long id;
 
     @ManyToOne
     private Usuario usuario;
@@ -18,16 +18,16 @@ public class GastoParticipante {
 
     public GastoParticipante(){
     }
-    public GastoParticipante(Usuario UsuarioPago, Grupo GrupoPertenece, Gasto gasto){
-        this.usuario = UsuarioPago;
-        this.grupo = GrupoPertenece ;
+    public GastoParticipante(Usuario usuario, Grupo grupo, Gasto gasto){
+        this.usuario = usuario;
+        this.grupo = grupo;
         this.gasto = gasto;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

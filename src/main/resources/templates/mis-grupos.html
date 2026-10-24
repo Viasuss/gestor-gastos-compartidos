@@ -1,79 +1,100 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>Mis grupos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+    <title>Mis grupos · Partly</title>
 </head>
-
 <body>
 
-<h1>Mis grupos</h1>
+<!-- ENCABEZADO -->
+<header class="subpage-header">
+    <a th:href="@{/inicio}" class="btn-back" aria-label="Volver">←</a>
+    <h1 class="subpage-title">Mis grupos</h1>
+</header>
 
-<a href="/grupo/crear">
-    <button type="button">Crear nuevo grupo</button>
-</a>
+<main class="page-content">
 
-<p>Grupos a los que perteneces:</p>
+    <!-- BOTÓN CREAR NUEVO GRUPO -->
+    <a th:href="@{/grupo/crear}" class="btn-submit" style="height: 50px; margin-top: 0;">
+        +&nbsp;&nbsp;Crear nuevo grupo
+    </a>
 
-<div th:if="${#lists.isEmpty(miembros)}">
-
-    <p>
-        Todavía no perteneces a ningún grupo.
+    <!-- CONTADOR DE GRUPOS ACTIVOS -->
+    <p class="section-block-desc" style="font-weight: 500;"
+       th:text="${gruposActivosCount} + ' grupos activos'">
+        0 grupos activos
     </p>
 
-</div>
+    <!-- ESTADO VACÍO -->
+    <div class="empty-state" th:if="${#lists.isEmpty(miembros) or gruposActivosCount == 0}">
+        Todavía no perteneces a ningún grupo activo.
+    </div>
 
-<ul th:unless="${#lists.isEmpty(miembros)}">
+    <!-- LISTA DE GRUPOS -->
+    <div class="groups-list" th:unless="${#lists.isEmpty(miembros)}">
+        <th:block th:each="miembro : ${miembros}">
+            <a th:if="${miembro.estado.name() == 'MIEMBRO'}"
+               th:href="@{/grupo/{id}(id=${miembro.grupo.id})}"
+               class="group-card"
+               style="padding: 16px;">
 
-    <li th:each="miembro : ${miembros}">
+                <!-- Ícono / Emoji del grupo -->
+                <div class="group-card-icon" style="width: 46px; height: 46px; font-size: 22px;">
+                    👥
+                </div>
 
-        <strong th:text="${miembro.grupo.name}">
-            Nombre del grupo
-        </strong>
+                <!-- Información del grupo -->
+                <div class="group-card-info">
+                    <span class="group-card-name" th:text="${miembro.grupo.name}">
+                        Nombre del grupo
+                    </span>
+                    <span class="group-card-members"
+                          th:text="${detallesGrupo != null and detallesGrupo.get(miembro.grupo.id) != null ? detallesGrupo.get(miembro.grupo.id) : 'Integrantes del grupo'}">
+                        Johan, Wilmer
+                    </span>
+                </div>
 
-        <span th:text="' - Estado: ' + ${miembro.estado}">
-            Estado
-        </span>
+                <!-- Monto y Estado de Balance -->
+                <div th:with="balance=${balancePorGrupo.get(miembro.grupo.id)}"
+                     style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0;">
 
-        <!-- NUEVO: balance real, solo tiene sentido mostrarlo si el
-             usuario ya es MIEMBRO (no para invitaciones pendientes o
-             rechazadas, que no tienen deudas calculadas en el mapa) -->
-        <span th:if="${miembro.estado.name() == 'MIEMBRO'}">
+                    <!-- Te deben -->
+                    <th:block th:if="${balance != null and balance.signum() > 0}">
+                        <span class="group-card-amount pos"
+                              style="color: #2D8B71;"
+                              th:text="'$' + ${#numbers.formatDecimal(balance, 1, 'POINT', 0, 'COMMA')}">
+                            $0
+                        </span>
+                        <span style="font-size: 11px; color: var(--text-muted);">te deben</span>
+                    </th:block>
 
-            <span th:with="balance=${balancePorGrupo.get(miembro.grupo.id)}">
+                    <!-- Debes -->
+                    <th:block th:if="${balance != null and balance.signum() < 0}">
+                        <span class="group-card-amount neg"
+                              th:text="'$' + ${#numbers.formatDecimal(balance.abs(), 1, 'POINT', 0, 'COMMA')}">
+                            $0
+                        </span>
+                        <span style="font-size: 11px; color: var(--text-muted);">debes</span>
+                    </th:block>
 
-                <span th:if="${balance.signum() > 0}"
-                      th:text="'+ $' + ${#numbers.formatDecimal(balance, 1, 'COMMA', 0, 'POINT')} + ' (te deben)'">
-                </span>
+                    <!-- A paz y salvo -->
+                    <th:block th:if="${balance == null or balance.signum() == 0}">
+                        <span class="group-card-amount" style="color: var(--text-muted);">$0</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">al día</span>
+                    </th:block>
 
-                <span th:if="${balance.signum() < 0}"
-                      th:text="'- $' + ${#numbers.formatDecimal(balance.abs(), 1, 'COMMA', 0, 'POINT')} + ' (debes)'">
-                </span>
+                </div>
+            </a>
+        </th:block>
+    </div>
 
-                <span th:if="${balance.signum() == 0}">
-                    $0
-                </span>
-
-            </span>
-
-        </span>
-
-        <a th:if="${miembro.estado.name() == 'MIEMBRO'}"
-           th:href="@{/grupo/{id}(id=${miembro.grupo.id})}">
-            Ver grupo
-        </a>
-
-    </li>
-
-</ul>
-
-<br>
-
-<a href="/inicio">
-    Volver al inicio
-</a>
+</main>
 
 </body>
-
 </html>

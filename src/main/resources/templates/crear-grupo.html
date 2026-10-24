@@ -1,125 +1,226 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>Crear grupo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+    <title>Crear grupo · Partly</title>
 </head>
-
 <body>
 
-<h1>Crear grupo</h1>
+<!-- CONTENEDOR DE MINI VENTANAS FLOTANTES (TOASTS EN LA ESQUINA SUPERIOR DERECHA) -->
+<div class="toast-container" id="toastContainer">
 
-<h2>Agregar personas</h2>
+    <!-- Mini ventana flotante de Error por Servidor (si viene ?error=...) -->
+    <div th:if="${param.error != null}" class="toast-card" id="serverErrorToast">
+        <div class="toast-icon-circle error">✕</div>
+        <div class="toast-body">
+            <h4 class="toast-title" th:if="${param.error[0] == 'nombre'}">Nombre requerido</h4>
+            <h4 class="toast-title" th:if="${param.error[0] == 'propio'}">No puedes agregarte a ti mismo</h4>
+            <h4 class="toast-title" th:if="${param.error[0] == 'usuario'}">Usuario no encontrado</h4>
 
-<p>
-    Escribe el correo de una persona registrada para agregarla al grupo.
-</p>
+            <p class="toast-message" th:if="${param.error[0] == 'nombre'}">
+                Debes escribir un nombre para el grupo antes de crearlo.
+            </p>
+            <p class="toast-message" th:if="${param.error[0] == 'propio'}">
+                Ya perteneces al grupo automáticamente como su creador.
+            </p>
+            <p class="toast-message" th:if="${param.error[0] == 'usuario'}">
+                Ese correo no pertenece a ningún usuario registrado en Partly.
+            </p>
+        </div>
+        <button type="button" class="toast-close-btn" onclick="cerrarToast('serverErrorToast')" title="Cerrar">✕</button>
+        <div class="toast-progress-bar error"></div>
+    </div>
 
-<!-- Formulario para agregar una persona -->
-<form th:action="@{/grupo/agregar-usuario}"
-      method="post">
+    <!-- Mini ventana flotante de Éxito al agregar persona (si viene ?mensaje=...) -->
+    <div th:if="${mensaje}" class="toast-card" id="serverSuccessToast">
+        <div class="toast-icon-circle success">✓</div>
+        <div class="toast-body">
+            <h4 class="toast-title">Persona agregada</h4>
+            <p class="toast-message" th:text="${mensaje}">La persona fue agregada a la lista correctamente.</p>
+        </div>
+        <button type="button" class="toast-close-btn" onclick="cerrarToast('serverSuccessToast')" title="Cerrar">✕</button>
+        <div class="toast-progress-bar success"></div>
+    </div>
 
-    <label for="email">Correo electrónico:</label>
+</div>
 
-    <input
-            type="email"
-            id="email"
-            name="email"
-            placeholder="Ej: usuario@gmail.com"
-            required>
+<!-- ENCABEZADO DE SUBPÁGINA (ADAPTADO A COMPUTADOR) -->
+<header class="subpage-header">
+    <a th:href="@{/inicio}" class="btn-back" aria-label="Volver al inicio">←</a>
+    <h1 class="subpage-title">Crear grupo</h1>
+</header>
 
-    <button type="submit">
-        Agregar
-    </button>
+<main class="page-content">
 
-</form>
+    <!-- SECCIÓN: AGREGAR PERSONAS -->
+    <section class="section-block">
+        <h2 class="section-block-title">Agregar personas</h2>
+        <p class="section-block-desc">
+            Escribe el correo de una persona registrada para agregarla al grupo.
+        </p>
 
-<br>
-
-<!-- Mensaje de error -->
-<!-- NUEVO: mensaje específico para el bug de autoinvitarse.
-     Como el controlador ahora manda ?error=propio en ese caso,
-     agregamos un th:if aparte para mostrar un texto claro,
-     distinto del error genérico de "usuario no encontrado". -->
-<p th:if="${param.error != null and param.error[0] == 'propio'}">
-    No puedes agregarte a ti mismo, ya perteneces al grupo como creador.
-</p>
-
-<p th:if="${param.error != null and param.error[0] == 'usuario'}">
-    Ese correo no pertenece a ningún usuario registrado.
-</p>
-
-<!-- Mensaje de éxito -->
-<p th:if="${mensaje}"
-   th:text="${mensaje}">
-</p>
-
-<hr>
-
-<!-- Lista de personas agregadas -->
-<h2>Personas agregadas</h2>
-
-<ul>
-
-    <li th:each="email : ${usuariosTemporales}">
-
-        <span th:text="${email}"></span>
-
-        <!-- NUEVO: botón "x" del Figma, para quitar a la persona
-             de la lista antes de crear el grupo. Es un form aparte
-             (no un link) porque quitar algo es una ACCIÓN que
-             modifica datos (la lista en sesión), y esas acciones
-             deben ir por POST, no por un simple GET de un link. -->
-        <form th:action="@{/grupo/quitar-usuario}"
-              method="post"
-              style="display:inline;">
-
-            <input type="hidden" name="email" th:value="${email}">
-
-            <button type="submit">✕</button>
-
+        <form th:action="@{/grupo/agregar-usuario}" method="post" class="add-person-row" id="formAgregarPersona">
+            <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-input"
+                style="height: 50px; flex: 1;"
+                placeholder="Ej: usuario@gmail.com"
+                required>
+            <button type="submit" class="btn-add-person">
+                Agregar
+            </button>
         </form>
+    </section>
 
-    </li>
+    <!-- SECCIÓN: PERSONAS AGREGADAS -->
+    <section class="section-block">
+        <h2 class="section-block-title">Personas agregadas</h2>
 
-</ul>
+        <!-- Si no hay personas -->
+        <div class="empty-state" th:if="${#lists.isEmpty(usuariosTemporales)}">
+            Todavía no has agregado personas al grupo.
+        </div>
 
-<p th:if="${#lists.isEmpty(usuariosTemporales)}">
-    Todavía no has agregado personas.
-</p>
+        <!-- Lista de Personas Agregadas -->
+        <div class="added-persons-list" th:unless="${#lists.isEmpty(usuariosTemporales)}">
+            <!-- Con entidad Usuario completa -->
+            <div th:each="p : ${personasAgregadas}" class="added-person-card">
+                <div class="added-person-avatar"
+                     th:text="${#strings.toUpperCase(#strings.substring(p.name, 0, 1))}">U</div>
+                <div class="added-person-info">
+                    <span class="added-person-name" th:text="${p.name}">Nombre Usuario</span>
+                    <span class="added-person-email" th:text="${p.email}">correo@ejemplo.com</span>
+                </div>
+                <form th:action="@{/grupo/quitar-usuario}" method="post" style="margin: 0;">
+                    <input type="hidden" name="email" th:value="${p.email}">
+                    <button type="submit" class="btn-remove-person" th:title="'Quitar ' + ${p.name}">✕</button>
+                </form>
+            </div>
 
-<hr>
+            <!-- Fallback para correos pendientes -->
+            <div th:if="${#lists.isEmpty(personasAgregadas)}" th:each="email : ${usuariosTemporales}" class="added-person-card">
+                <div class="added-person-avatar">@</div>
+                <div class="added-person-info">
+                    <span class="added-person-name" th:text="${email}">correo@ejemplo.com</span>
+                </div>
+                <form th:action="@{/grupo/quitar-usuario}" method="post" style="margin: 0;">
+                    <input type="hidden" name="email" th:value="${email}">
+                    <button type="submit" class="btn-remove-person" title="Quitar">✕</button>
+                </form>
+            </div>
+        </div>
+    </section>
 
-<!-- Nombre del grupo -->
-<h2>Nombre del grupo</h2>
-
-<form th:action="@{/grupo/crear}"
-      method="post">
-
-    <label for="name">Nombre:</label>
-
-    <input
+    <!-- SECCIÓN: NOMBRE DEL GRUPO Y BOTÓN CREAR -->
+    <form th:action="@{/grupo/crear}" method="post" class="section-block" id="formCrearGrupo">
+        <h2 class="section-block-title">Nombre del grupo</h2>
+        <input
             type="text"
-            id="name"
+            id="groupNameInput"
             name="name"
+            class="form-input"
+            style="height: 52px;"
             placeholder="Ej: Viaje a Cartagena"
             required>
 
-    <br><br>
+        <button type="submit" id="btnCrearGrupo" class="btn-submit" style="height: 54px; margin-top: 10px;">
+            Crear grupo
+        </button>
+    </form>
 
-    <button type="submit">
-        Crear grupo
-    </button>
+</main>
 
-</form>
+<script>
+    // ==========================================
+    // FUNCIÓN PARA CERRAR TOAST FLOTANTE
+    // ==========================================
+    function cerrarToast(id) {
+        const toast = document.getElementById(id);
+        if (toast) {
+            toast.classList.add('toast-hiding');
+            setTimeout(() => {
+                toast.remove();
+            }, 350);
+        }
+    }
 
-<br>
+    // Auto-cierre de toasts del servidor tras 4.2 segundos
+    document.querySelectorAll('.toast-card').forEach(toast => {
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                toast.classList.add('toast-hiding');
+                setTimeout(() => toast.remove(), 350);
+            }
+        }, 4200);
+    });
 
-<a href="/inicio">
-    Volver al inicio
-</a>
+    // ==========================================
+    // FUNCIÓN PARA CREAR TOAST FLOTANTE DINÁMICO
+    // ==========================================
+    function mostrarToastDinamico(tipo, titulo, mensaje) {
+        const container = document.getElementById('toastContainer');
+        const toastId = 'toast-' + Date.now();
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-card';
+        toast.id = toastId;
+
+        const iconSymbol = tipo === 'success' ? '✓' : '✕';
+        const iconClass = tipo === 'success' ? 'success' : 'error';
+
+        toast.innerHTML = `
+            <div class="toast-icon-circle ${iconClass}">${iconSymbol}</div>
+            <div class="toast-body">
+                <h4 class="toast-title">${titulo}</h4>
+                <p class="toast-message">${mensaje}</p>
+            </div>
+            <button type="button" class="toast-close-btn" onclick="cerrarToast('${toastId}')" title="Cerrar">✕</button>
+            <div class="toast-progress-bar ${iconClass}"></div>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                toast.classList.add('toast-hiding');
+                setTimeout(() => toast.remove(), 350);
+            }
+        }, 4000);
+    }
+
+    // ==========================================
+    // INTERCEPTAR ENVÍO DEL FORMULARIO DE CREAR GRUPO
+    // ==========================================
+    const formCrearGrupo = document.getElementById('formCrearGrupo');
+    const groupNameInput = document.getElementById('groupNameInput');
+    const btnCrearGrupo = document.getElementById('btnCrearGrupo');
+
+    formCrearGrupo.addEventListener('submit', function (e) {
+        const nombre = groupNameInput.value.trim();
+
+        if (!nombre) {
+            e.preventDefault();
+            mostrarToastDinamico('error', 'No se pudo crear el grupo', 'Debes escribir un nombre para el grupo antes de crearlo.');
+            groupNameInput.focus();
+            return false;
+        }
+
+        // Mostrar mini ventana flotante de éxito avisando que se está creando
+        mostrarToastDinamico('success', '¡Creando grupo!', `El grupo "${nombre}" se está registrando correctamente.`);
+
+        // Deshabilitar botón para evitar envíos dobles
+        btnCrearGrupo.disabled = true;
+        btnCrearGrupo.style.opacity = '0.7';
+    });
+</script>
 
 </body>
-
 </html>

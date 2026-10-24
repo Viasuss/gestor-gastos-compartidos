@@ -1,94 +1,86 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>Invitaciones</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+    <title>Mis invitaciones · Partly</title>
 </head>
-
 <body>
 
-<h1>Invitaciones</h1>
+<!-- ENCABEZADO -->
+<header class="subpage-header">
+    <a th:href="@{/inicio}" class="btn-back" aria-label="Volver">←</a>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <h1 class="subpage-title">Mis invitaciones</h1>
+        <span th:if="${not #lists.isEmpty(invitaciones)}"
+              style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--negative); display: inline-block;"
+              title="Tienes invitaciones pendientes"></span>
+    </div>
+</header>
 
-<p>
-    Estas son las invitaciones que tienes pendientes.
-</p>
+<main class="page-content">
 
-<hr>
-
-<!-- ============================= -->
-<!-- SIN INVITACIONES -->
-<!-- ============================= -->
-
-<div th:if="${#lists.isEmpty(invitaciones)}">
-
-    <p>
-        No tienes invitaciones pendientes.
+    <!-- CONTADOR DE INVITACIONES PENDIENTES -->
+    <p class="section-block-desc" style="font-weight: 500;">
+        <span th:if="${#lists.isEmpty(invitaciones)}">
+            No tienes invitaciones pendientes
+        </span>
+        <span th:unless="${#lists.isEmpty(invitaciones)}"
+              th:text="${invitaciones.size()} + (${invitaciones.size() == 1} ? ' invitación pendiente' : ' invitaciones pendientes')">
+            1 invitación pendiente
+        </span>
     </p>
 
-</div>
-
-
-<!-- ============================= -->
-<!-- INVITACIONES -->
-<!-- ============================= -->
-
-<div th:unless="${#lists.isEmpty(invitaciones)}">
-
-    <div th:each="invitacion : ${invitaciones}">
-
-        <h2 th:text="${invitacion.grupo.name}">
-            Nombre del grupo
-        </h2>
-
-        <p>
-            <strong>Invitado por:</strong>
-
-            <span th:text="${invitacion.grupo.creador.name}">
-                    Nombre del creador
-                </span>
-        </p>
-
-        <p>
-            <strong>Estado:</strong>
-
-            <span th:text="${invitacion.estado}">
-        PENDIENTE
-    </span>
-        </p>
-
-        <form th:action="@{/invitacion/{id}/aceptar(id=${invitacion.id})}"
-              method="post">
-
-            <button type="submit">
-                Aceptar
-            </button>
-
-        </form>
-
-        <form th:action="@{/invitacion/{id}/rechazar(id=${invitacion.id})}"
-              method="post">
-
-            <button type="submit">
-                Rechazar
-            </button>
-
-        </form>
-
-        <hr>
-
-
+    <!-- ESTADO VACÍO -->
+    <div class="empty-state" th:if="${#lists.isEmpty(invitaciones)}">
+        No tienes invitaciones pendientes por el momento. Cuando alguien te agregue a un grupo, aparecerá aquí.
     </div>
 
-</div>
+    <!-- LISTA DE INVITACIONES -->
+    <div style="display: flex; flex-direction: column; gap: 14px;" th:unless="${#lists.isEmpty(invitaciones)}">
+        <article th:each="invitacion : ${invitaciones}" class="invite-card-full">
+            <div class="invite-card-header">
+                <!-- Avatar verde con inicial del creador -->
+                <div class="invite-avatar-circle"
+                     th:text="${#strings.toUpperCase(#strings.substring(invitacion.grupo.creador.name, 0, 1))}">
+                    W
+                </div>
 
+                <div class="invite-text-content">
+                    <p class="invite-main-text">
+                        <strong th:text="${invitacion.grupo.creador.name}">Wilmer</strong>
+                        te invitó a unirte al grupo
+                        <strong th:text="'&quot;' + ${invitacion.grupo.name} + '&quot;'">"Asado del sábado"</strong>
+                    </p>
+                    <span class="invite-timestamp">Invitación pendiente</span>
+                </div>
+            </div>
 
-<br>
+            <!-- Botones de Acción: Rechazar y Aceptar -->
+            <div class="invite-actions-row">
+                <!-- Rechazar -->
+                <form th:action="@{/invitacion/{id}/rechazar(id=${invitacion.id})}" method="post" style="margin: 0;">
+                    <button type="submit" class="btn-invite-action btn-invite-reject">
+                        Rechazar
+                    </button>
+                </form>
 
-<a href="/inicio">
-    Volver al inicio
-</a>
+                <!-- Aceptar -->
+                <form th:action="@{/invitacion/{id}/aceptar(id=${invitacion.id})}" method="post" style="margin: 0;">
+                    <button type="submit" class="btn-invite-action btn-invite-accept">
+                        Aceptar
+                    </button>
+                </form>
+            </div>
+        </article>
+    </div>
+
+</main>
 
 </body>
-
 </html>

@@ -1,268 +1,146 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${grupo.name}">Grupo</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+    <title th:text="${grupo.name} + ' · Partly'">Grupo · Partly</title>
 </head>
-
 <body>
 
-<!-- ============================= -->
 <!-- ENCABEZADO -->
-<!-- ============================= -->
-
-<header>
-
-    <a href="/mis-grupos">
-        ← Volver a mis grupos
-    </a>
-    <h1 th:text="${grupo.name}">
-    </h1>
-
-    <!-- Metadata del grupo: contexto secundario, no es lo primero que se lee -->
-    <p>
-        <small>
-            Creado por
-            <span th:text="${grupo.creador.name}">
-            </span>
-            el
-            <span th:text="${grupo.fecha_creacion}">Fecha></span>
-        </small>
-    </p>
+<header class="subpage-header">
+    <a th:href="@{/mis-grupos}" class="btn-back" aria-label="Volver">←</a>
+    <h1 class="subpage-title" th:text="${grupo.name}">Nombre del grupo</h1>
 </header>
 
-<!-- ============================= -->
-<!-- TARJETA DE DEUDA (Sprint 6: ya conectada a DeudaService) -->
-<!-- ============================= -->
+<main class="page-content">
 
-<!-- balanceTotal es la suma de todas las líneas de "deudas": puede ser
-     positivo (en total te deben), negativo (en total debes) o cero
-     (estás a paz y salvo en este grupo) -->
-
-<section>
-
-    <p th:if="${balanceTotal.signum() > 0}">
-        Te deben en total
-    </p>
-
-    <p th:if="${balanceTotal.signum() < 0}">
-        Debes en total
-    </p>
-
-    <p th:if="${balanceTotal.signum() == 0}">
-        Estás a paz y salvo
-    </p>
-
-    <!-- Mostramos el valor absoluto: el signo ya se explicó arriba
-         con el texto ("Te deben" / "Debes"), así que aquí no
-         repetimos el signo negativo -->
-    <!-- #numbers.formatDecimal(numero, mínimoDígitosEnteros, separadorMiles, decimales, separadorDecimal)
-         Con esto: 50000 se muestra como "50,000.00", no como el "50.0" crudo
-         que BigDecimal guarda internamente -->
-    <p th:text="'$' + ${#numbers.formatDecimal(balanceTotal.abs(), 1, 'COMMA', 0, 'POINT')}">
-        $0.00
-    </p>
-
-</section>
-
-<!-- ============================= -->
-<!-- DETALLE DE DEUDAS -->
-<!-- ============================= -->
-
-<section>
-
-    <h2>Detalle de mis deudas</h2>
-
-    <!-- Cuando no hay deudas -->
-
-    <div th:if="${#lists.isEmpty(deudas)}">
-
-        <p>
-            No tienes movimientos pendientes en este grupo.
+    <!-- TARJETA HERO OSCURA (BALANCE Y DETALLE DE DEUDAS) -->
+    <section class="hero-dark-card">
+        <!-- Encabezado según el estado del balance -->
+        <p class="hero-dark-label" th:if="${balanceTotal.signum() > 0}">
+            TE DEBEN EN TOTAL
+        </p>
+        <p class="hero-dark-label" th:if="${balanceTotal.signum() < 0}">
+            DEBES EN TOTAL
+        </p>
+        <p class="hero-dark-label" th:if="${balanceTotal.signum() == 0}">
+            A PAZ Y SALVO
         </p>
 
-    </div>
+        <!-- Monto total -->
+        <p class="hero-dark-amount"
+           th:text="'$' + ${#numbers.formatDecimal(balanceTotal.abs(), 1, 'POINT', 0, 'COMMA')}">
+            $0
+        </p>
 
+        <!-- Divisor sutil -->
+        <div class="hero-dark-divider"></div>
 
-    <!-- Cuando sí existen deudas -->
+        <!-- Desglose por persona -->
+        <div class="hero-debtors-list">
+            <!-- Si no hay deudas pendientes -->
+            <p th:if="${#lists.isEmpty(deudas)}" style="font-size: 13px; color: #BFC4CC; margin: 0;">
+                No tienes movimientos pendientes en este grupo.
+            </p>
 
-    <div th:unless="${#lists.isEmpty(deudas)}">
+            <!-- Lista de deudas con cada persona -->
+            <div th:unless="${#lists.isEmpty(deudas)}" th:each="deuda : ${deudas}" class="hero-debtor-row">
+                <!-- Avatar circular blanco translúcido -->
+                <span class="hero-debtor-avatar"
+                      th:text="${#strings.toUpperCase(#strings.substring(deuda.otraPersona.name, 0, 1))}">U</span>
 
-        <article th:each="deuda : ${deudas}">
+                <!-- Nombre de la persona -->
+                <span class="hero-debtor-name" th:text="${deuda.otraPersona.name}">Nombre</span>
 
-            <!-- Dinero que te deben -->
+                <!-- Te deben (verde) -->
+                <span th:if="${deuda.meDeben()}"
+                      class="hero-debtor-amount positive"
+                      th:text="'+ $' + ${#numbers.formatDecimal(deuda.monto, 1, 'POINT', 0, 'COMMA')}">
+                    +$0
+                </span>
 
-            <div th:if="${deuda.meDeben()}">
-
-                <h3>
-                    Te deben
-                </h3>
-
-                <p>
-
-                    <strong th:text="${deuda.otraPersona.name}">
-                        Nombre
-                    </strong>
-
-                    te debe
-
-                    <strong
-                            th:text="'$' + ${#numbers.formatDecimal(
-                                deuda.monto,
-                                1,
-                                'COMMA',
-                                0,
-                                'POINT'
-                            )}">
-                        $0
-                    </strong>
-
-                </p>
-
+                <!-- Debes (coral) -->
+                <span th:if="${deuda.leDebo()}"
+                      class="hero-debtor-amount negative"
+                      th:text="'- $' + ${#numbers.formatDecimal(deuda.monto.abs(), 1, 'POINT', 0, 'COMMA')}">
+                    -$0
+                </span>
             </div>
+        </div>
+    </section>
 
-
-            <!-- Dinero que tú debes -->
-
-            <div th:if="${deuda.leDebo()}">
-
-                <h3>
-                    Debes
-                </h3>
-
-                <p>
-
-                    Le debes a
-
-                    <strong th:text="${deuda.otraPersona.name}">
-                        Nombre
-                    </strong>
-
-                    <strong
-                            th:text="'$' + ${#numbers.formatDecimal(
-                                deuda.monto.abs(),
-                                1,
-                                'COMMA',
-                                0,
-                                'POINT'
-                            )}">
-                        $0
-                    </strong>
-
-                </p>
-
-            </div>
-
-
-            <hr>
-
-        </article>
-
-    </div>
-
-</section>
-
-<!-- ============================= -->
-<!-- INTEGRANTES -->
-<!-- ============================= -->
-
-<section>
-
-    <p>Integrantes:</p>
-
-    <ul>
-
-        <li th:each="miembro : ${miembros}">
-            <span th:text="${miembro.usuario.name}">
+    <!-- INTEGRANTES (CHIPS CIRCULARES) -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Integrantes:</span>
+        <div class="members-chips-row">
+            <span th:each="miembro : ${miembros}"
+                  class="member-chip-avatar"
+                  th:title="${miembro.usuario.name}"
+                  th:text="${#strings.toUpperCase(#strings.substring(miembro.usuario.name, 0, 1))}">
+                J
             </span>
-        </li>
-
-    </ul>
-
-</section>
-
-<!-- ============================= -->
-<!-- BOTÓN AGREGAR GASTO -->
-<!-- ============================= -->
-
-<a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}">
-    <button type="button">+ Agregar gasto</button>
-</a>
-
-<!-- ============================= -->
-<!-- HISTORIAL DE GASTOS -->
-<!-- ============================= -->
-
-<section>
-
-    <h2>Historial de gastos</h2>
-
-
-    <!-- No hay gastos -->
-
-    <div th:if="${#lists.isEmpty(gastos)}">
-
-        <p>
-            Todavía no hay gastos registrados.
-        </p>
-
+        </div>
     </div>
 
+    <!-- BOTÓN AGREGAR GASTO -->
+    <a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}"
+       class="btn-submit"
+       style="height: 50px; margin-top: 0;">
+        +&nbsp;&nbsp;Agregar gasto
+    </a>
 
-    <!-- Lista de gastos -->
+    <!-- HISTORIAL DE GASTOS -->
+    <section class="section-block">
+        <h2 class="section-block-title" style="font-size: 16px;">Historial de gastos</h2>
 
-    <div th:unless="${#lists.isEmpty(gastos)}">
+        <!-- Estado vacío -->
+        <div class="empty-state" th:if="${#lists.isEmpty(gastos)}">
+            Todavía no hay gastos registrados en este grupo.
+        </div>
 
-        <article th:each="gasto : ${gastos}">
+        <!-- Lista de tarjetas de gasto -->
+        <div class="expenses-list" th:unless="${#lists.isEmpty(gastos)}">
+            <article th:each="gasto : ${gastos}" class="expense-card">
+                <div class="expense-card-top">
+                    <h3 class="expense-card-title" th:text="${gasto.descripcion}">
+                        Descripción del gasto
+                    </h3>
+                    <span class="expense-card-amount"
+                          th:text="'$' + ${#numbers.formatDecimal(gasto.monto, 1, 'POINT', 0, 'COMMA')}">
+                        $0
+                    </span>
+                </div>
 
-            <h3 th:text="${gasto.getDescripcion()}">
-                Descripción del gasto
-            </h3>
+                <!-- Detalle de pagadores y fecha -->
+                <div class="expense-card-detail"
+                     th:with="pagos=${pagosPorGasto.get(gasto.id)}">
+                    <!-- Si tiene un único pagador -->
+                    <span th:if="${pagos != null and pagos.size() == 1}">
+                        Pagó <span th:text="${pagos[0].usuario.name}">Usuario</span>
+                    </span>
 
-            <p>
-                <strong>Monto:</strong>
+                    <!-- Si tiene varios pagadores -->
+                    <span th:if="${pagos != null and pagos.size() > 1}">
+                        Pagaron
+                        <span th:each="p, iterStat : ${pagos}">
+                            <span th:text="${p.usuario.name} + ' ($' + ${#numbers.formatDecimal(p.monto, 1, 'POINT', 0, 'COMMA')} + ')'"></span><span th:if="${!iterStat.last}">, </span>
+                        </span>
+                    </span>
 
-                <span th:text="'$' + ${#numbers.formatDecimal(gasto.getMonto(), 1, 'COMMA', 0, 'POINT')}">
-                    $0.00
-                </span>
-            </p>
+                    <!-- Fecha -->
+                    <span>· <span th:text="${gasto.fecha}">00/00/0000</span></span>
+                </div>
+            </article>
+        </div>
+    </section>
 
-            <p>
-                <strong>Fecha:</strong>
-
-                <span th:text="${gasto.getFecha()}">
-                    00/00/0000
-                </span>
-            </p>
-
-            <!-- CAMBIO (Sprint 6, ampliación): un gasto ya puede tener
-                 VARIOS pagadores, cada uno con su propio monto (por eso
-                 Gasto ya no tiene gasto.getUsuario()). Los pagos de
-                 cada gasto llegan en el mapa "pagosPorGasto", que arma
-                 el controlador usando el id de cada gasto como llave. -->
-
-            <p>
-                <strong>Pagó:</strong>
-            </p>
-
-            <ul>
-                <li th:each="pago : ${pagosPorGasto.get(gasto.getId())}">
-                    <span th:text="${pago.usuario.name}">Usuario</span>
-                    —
-                    <span th:text="'$' + ${#numbers.formatDecimal(pago.monto, 1, 'COMMA', 0, 'POINT')}">$0.00</span>
-                </li>
-            </ul>
-
-            <hr>
-
-        </article>
-
-    </div>
-
-</section>
+</main>
 
 </body>
-
 </html>

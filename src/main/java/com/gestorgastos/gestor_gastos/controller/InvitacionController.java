@@ -40,11 +40,12 @@ public class InvitacionController {
         }
 
         List<MiembroGrupo> invitaciones =
-                miembroGrupoRepository.findByUsuarioIdAndEstado(
+                miembroGrupoRepository.findByUsuarioIdAndEstado (
                         usuario.getId(),
                         EstadoMiembro.PENDIENTE
                 );
 
+        session.setAttribute("invitacionesPendientes", invitaciones.size());
         model.addAttribute("invitaciones", invitaciones);
 
         return "invitaciones";
@@ -79,6 +80,7 @@ public class InvitacionController {
         invitacion.setEstado(EstadoMiembro.MIEMBRO);
 
         miembroGrupoRepository.save(invitacion);
+        session.setAttribute("invitacionesPendientes", miembroGrupoRepository.findByUsuarioIdAndEstado(usuario.getId(), EstadoMiembro.PENDIENTE).size());
 
         return "redirect:/invitaciones";
     }
@@ -112,6 +114,7 @@ public class InvitacionController {
         invitacion.setEstado(EstadoMiembro.RECHAZO);
 
         miembroGrupoRepository.save(invitacion);
+        session.setAttribute("invitacionesPendientes", miembroGrupoRepository.findByUsuarioIdAndEstado(usuario.getId(), EstadoMiembro.PENDIENTE).size());
 
         return "redirect:/invitaciones";
     }

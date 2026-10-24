@@ -18,8 +18,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import jakarta.servlet.http.HttpSession;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class UsuarioController {
@@ -27,7 +30,6 @@ public class UsuarioController {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final MiembroGrupoRepository miembroGrupoRepository;
-    // NUEVO: para calcular el balance general de la tarjeta de inicio.html
     private final DeudaService deudaService;
 
     public UsuarioController(
@@ -53,14 +55,24 @@ public class UsuarioController {
     @PostMapping("/registro")
     public String registrarUsuario(@ModelAttribute Usuario usuario) {
 
-        String passwordCifrada =
-                passwordEncoder.encode(usuario.getPassword());
+        if (usuario.getName() == null || usuario.getName().isBlank() ||
+                usuario.getEmail() == null || usuario.getEmail().isBlank() ||
+                usuario.getPassword() == null || usuario.getPassword().isBlank()) {
+            return "redirect:/registro?error=campos";
+        }
 
-        usuario.setPassword(passwordCifrada);
+        String emailNormalizado = usuario.getEmail().trim().toLowerCase();
+        if (usuarioRepository.findByEmailIgnoreCase(emailNormalizado).isPresent()) {
+            return "redirect:/registro?error=existe";
+        }
+
+        usuario.setName(usuario.getName().trim());
+        usuario.setEmail(emailNormalizado);
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
 
         usuarioRepository.save(usuario);
 
-        return "redirect:/login";
+        return "redirect:/login?registrado";
     }
 
     @GetMapping("/login")
@@ -75,7 +87,9 @@ public class UsuarioController {
             @RequestParam String password,
             HttpSession session) {
 
-        return usuarioRepository.findByEmail(email)
+        String emailNormalizado = email != null ? email.trim() : "";
+
+        return usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
                 .filter(usuario -> passwordEncoder.matches(
                         password,
                         usuario.getPassword()
@@ -86,6 +100,7 @@ public class UsuarioController {
                 })
                 .orElse("redirect:/login?error");
     }
+
     @GetMapping("/logout")
     public String cerrarSesion(HttpSession session) {
 
@@ -110,13 +125,10 @@ public class UsuarioController {
                 );
 
         List<MiembroGrupo> gruposDestacados =
-                misGrupos.size() > 2
-                        ? misGrupos.subList(0, 2)
+                misGrupos.size() > 4
+                        ? misGrupos.subList(0, 4)
                         : misGrupos;
 
-        // NUEVO: para calcular el balance general, DeudaService necesita
-        // la lista de objetos Grupo (no de MiembroGrupo). Como misGrupos
-        // es List<MiembroGrupo>, sacamos el .getGrupo() de cada uno.
         List<Grupo> grupos = new ArrayList<>();
         for (MiembroGrupo miembro : misGrupos) {
             grupos.add(miembro.getGrupo());
@@ -125,8 +137,34 @@ public class UsuarioController {
         BalanceGeneral balanceGeneral =
                 deudaService.calcularBalanceGeneral(grupos, usuario);
 
+        Map<Long, BigDecimal> balancePorGrupo = new HashMap<>();
+        Map<Long, Integer> miembrosPorGrupo = new HashMap<>();
+
+        for (MiembroGrupo miembro : gruposDestacados) {
+            BigDecimal balance = deudaService.calcularBalanceTotal(
+                    miembro.getGrupo(),
+                    usuario
+            );
+            balancePorGrupo.put(miembro.getGrupo().getId(), balance);
+
+            int cantidadMiembros = miembroGrupoRepository.findByGrupoIdAndEstado(
+                    miembro.getGrupo().getId(),
+                    EstadoMiembro.MIEMBRO
+            ).size();
+            miembrosPorGrupo.put(miembro.getGrupo().getId(), cantidadMiembros);
+        }
+
+        int invitacionesPendientes = miembroGrupoRepository.findByUsuarioIdAndEstado(
+                usuario.getId(),
+                EstadoMiembro.PENDIENTE
+        ).size();
+
+        session.setAttribute("invitacionesPendientes", invitacionesPendientes);
         model.addAttribute("gruposDestacados", gruposDestacados);
         model.addAttribute("balanceGeneral", balanceGeneral);
+        model.addAttribute("balancePorGrupo", balancePorGrupo);
+        model.addAttribute("miembrosPorGrupo", miembrosPorGrupo);
+        model.addAttribute("invitacionesPendientes", invitacionesPendientes);
 
         return "inicio";
     }

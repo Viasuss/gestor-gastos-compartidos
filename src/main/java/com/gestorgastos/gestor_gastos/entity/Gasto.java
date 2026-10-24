@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public class Gasto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     // ELIMINADO (Sprint 6, ampliación): antes había un único
     // "private Usuario usuario;" que representaba "quién pagó".
@@ -29,17 +29,17 @@ public class Gasto {
 
     }
 
-    public Gasto(String descripcion, BigDecimal monto, LocalDate fecha, Grupo GrupoPertenece) {
+    public Gasto(String descripcion, BigDecimal monto, LocalDate fecha, Grupo grupo) {
         this.descripcion = descripcion;
         this.monto = monto;
         this.fecha = fecha;
-        this.grupo = GrupoPertenece;
+        this.grupo = grupo;
     }
 
-    public long getId() {
+    public Long getId() {
         return this.id;
     }
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

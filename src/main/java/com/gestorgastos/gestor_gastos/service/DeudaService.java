@@ -188,7 +188,7 @@ public class DeudaService {
                         // Nuestro usuario le debe a este acreedor
                         Usuario acreedor = personasDelGasto.get(idAcreedor);
                         acumular(resumenPorPersona, acreedor, montoAsignado.negate());
-                    } else if (idAcreedor == usuario.getId()) {
+                    } else if (idAcreedor.equals(usuario.getId())) {
                         // Este deudor le debe a nuestro usuario
                         Usuario deudor = personasDelGasto.get(idDeudor);
                         acumular(resumenPorPersona, deudor, montoAsignado);

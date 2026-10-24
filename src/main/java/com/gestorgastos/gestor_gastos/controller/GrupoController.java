@@ -12,6 +12,7 @@ import com.gestorgastos.gestor_gastos.repository.UsuarioRepository;
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -63,6 +64,11 @@ public class GrupoController {
             );
         }
 
+        List<Usuario> personasAgregadas = new ArrayList<>();
+        for (String emailTemp : usuariosTemporales) {
+            usuarioRepository.findByEmail(emailTemp).ifPresent(personasAgregadas::add);
+        }
+        model.addAttribute("personasAgregadas", personasAgregadas);
         model.addAttribute(
                 "usuariosTemporales",
                 usuariosTemporales
@@ -159,6 +165,7 @@ public class GrupoController {
     // CREAR GRUPO
     // ==========================================
 
+    @Transactional
     @PostMapping("/grupo/crear")
     public String crearGrupo(
             @RequestParam String name,
@@ -171,11 +178,14 @@ public class GrupoController {
             return "redirect:/login";
         }
 
+        if (name == null || name.trim().isBlank()) {
+            return "redirect:/grupo/crear?error=nombre";
+        }
         Grupo grupo = new Grupo();
 
         grupo.setName(name);
         grupo.setCreador(usuarioActual);
-        grupo.setFecha_creacion(LocalDate.now());
+        grupo.setFechaCreacion(LocalDate.now());
 
         grupoRepository.save(grupo);
 
@@ -227,6 +237,6 @@ public class GrupoController {
 
         session.removeAttribute("usuariosTemporales");
 
-        return "redirect:/inicio";
+        return "redirect:/inicio?grupoCreado=true&nombre=" + java.net.URLEncoder.encode(grupo.getName(), java.nio.charset.StandardCharsets.UTF_8);
     }
 }

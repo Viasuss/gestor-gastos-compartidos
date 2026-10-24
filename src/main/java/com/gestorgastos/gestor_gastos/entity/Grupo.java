@@ -8,10 +8,12 @@ import java.time.LocalDate;
 public class Grupo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     private String name;
-    private LocalDate fecha_creacion;
+
+    @Column(name = "fecha_creacion")
+    private LocalDate fechaCreacion;
 
     @ManyToOne
     private Usuario creador;
@@ -21,18 +23,18 @@ public class Grupo {
     }
 
     // Constructor con los datos del grupo
-    public Grupo(String name, LocalDate fecha_creacion, Usuario UsuarioPago) {
+    public Grupo(String name, LocalDate fechaCreacion, Usuario creador) {
         this.name = name;
-        this.fecha_creacion = fecha_creacion;
-        this.creador = UsuarioPago;
+        this.fechaCreacion = fechaCreacion;
+        this.creador = creador;
     }
 
     // Getter y Setter de id
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -45,13 +47,22 @@ public class Grupo {
         this.name = name;
     }
 
-    // Getter y Setter de fecha_creacion
-    public LocalDate getFecha_creacion() {
-        return fecha_creacion;
+    // Getter y Setter de fechaCreacion
+    public LocalDate getFechaCreacion() {
+        return fechaCreacion;
     }
 
-    public void setFecha_creacion(LocalDate fecha_creacion) {
-        this.fecha_creacion = fecha_creacion;
+    public void setFechaCreacion(LocalDate fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    // Métodos alias para compatibilidad
+    public LocalDate getFecha_creacion() {
+        return fechaCreacion;
+    }
+
+    public void setFecha_creacion(LocalDate fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
     }
 
     // Getter y Setter de creador

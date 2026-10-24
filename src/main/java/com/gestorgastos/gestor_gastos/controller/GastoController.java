@@ -17,6 +17,7 @@ import com.gestorgastos.gestor_gastos.repository.PagoGastoRepository;
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -101,6 +102,7 @@ public class GastoController {
     // GUARDAR EL GASTO
     // ==========================================
 
+    @Transactional
     @PostMapping("/grupo/{id}/gasto")
     public String guardarGasto(
             @PathVariable Long id,

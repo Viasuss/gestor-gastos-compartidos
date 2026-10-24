@@ -1,22 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
-    <style>
-        /* MODO CLARO: logo a color */
-        .a { fill: #EC6E5E; }   /* mitad coral */
-        .b { fill: #1C5C50; }   /* mitad verde */
-        .c { fill: #FFFFFF; }   /* círculo del centro */
-        .p { fill: #1C5C50; }   /* letra P */
-
-        /* MODO OSCURO: logo monocromático */
-        @media (prefers-color-scheme: dark) {
-        .a { fill: #9A9C9E; }
-        .b { fill: #E6E7E8; }
-        .c { fill: #151A1D; }
-        .p { fill: #FFFFFF; }
-        }
-    </style>
-    <circle class="b" cx="40" cy="40" r="40"/>
-    <path class="a" d="M70.7 14.4 A40 40 0 0 0 9.3 65.6 Z"/>
-    <circle class="c" cx="40" cy="40" r="14.5"/>
-    <text class="p" x="40" y="46.5" text-anchor="middle"
-          font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700">P</text>
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="60" fill="#E6F2ED"/>
+  <path d="M97.2966 13.0004C104.178 18.4613 109.777 25.3667 113.696 33.2288C117.616 41.0909 119.762 49.7178 119.981 58.5002C120.201 67.2825 118.489 76.0059 114.967 84.0541C111.445 92.1022 106.199 99.2788 99.599 105.077C92.9989 110.875 85.2062 115.153 76.7713 117.608C68.3364 120.064 59.4652 120.637 50.7844 119.288C42.1036 117.939 33.825 114.7 26.5335 109.799C19.2419 104.899 13.1154 98.4579 8.58668 90.9301L60 60L97.2966 13.0004Z" fill="#1B5D53"/>
+  <path d="M8.58668 90.9301C1.34025 78.8848 -1.4469 64.6775 0.711523 50.7872C2.86995 36.8968 9.83691 24.2052 20.3968 14.9268C30.9568 5.64845 44.4392 0.372302 58.4918 0.0189582C72.5444 -0.334386 86.275 4.25751 97.2879 12.9935L60 60L8.58668 90.9301Z" fill="#E66A5A"/>
+  <circle cx="60" cy="60" r="23" fill="#F9F8F6"/>
+  <text fill="#1B5D53" xml:space="preserve" font-family="Inter" font-size="24" font-weight="bold" letter-spacing="0em"><tspan x="53" y="69.2273">P</tspan></text>
 </svg>

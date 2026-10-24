@@ -22,11 +22,11 @@ public class MiembroGrupo {
     public MiembroGrupo() {
     }
 
-   public MiembroGrupo(Usuario UsuarioPago, Grupo GrupoPertenece,  EstadoMiembro estado) {
-        this.usuario = UsuarioPago;
-        this.grupo = GrupoPertenece;
+    public MiembroGrupo(Usuario usuario, Grupo grupo, EstadoMiembro estado) {
+        this.usuario = usuario;
+        this.grupo = grupo;
         this.estado = estado;
-   }
+    }
 
     // Getter y Setter de id
     public Long getId() {
@@ -61,6 +61,4 @@ public class MiembroGrupo {
     public void setEstado(EstadoMiembro estado) {
         this.estado = estado;
     }
-
-
 }

@@ -18,7 +18,7 @@ public class PagoGasto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @ManyToOne
     private Gasto gasto;
@@ -37,11 +37,11 @@ public class PagoGasto {
         this.monto = monto;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

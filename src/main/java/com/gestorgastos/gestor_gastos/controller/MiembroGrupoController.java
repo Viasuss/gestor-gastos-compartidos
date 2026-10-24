@@ -69,6 +69,8 @@ public class MiembroGrupoController {
         // sentido calcular la deuda de los grupos donde el usuario ya
         // es MIEMBRO (no de invitaciones pendientes o rechazadas, que
         // también vienen en "miembros").
+        Map<Long, String> detallesGrupo = new HashMap<>();
+        int gruposActivosCount = 0;
         Map<Long, BigDecimal> balancePorGrupo = new HashMap<>();
 
         for (MiembroGrupo miembro : miembros) {
@@ -81,10 +83,24 @@ public class MiembroGrupoController {
                 );
 
                 balancePorGrupo.put(miembro.getGrupo().getId(), balance);
+                gruposActivosCount++;
+
+                List<MiembroGrupo> integrantes =
+                        miembroGrupoRepository.findByGrupoIdAndEstado(
+                                miembro.getGrupo().getId(),
+                                EstadoMiembro.MIEMBRO
+                        );
+                List<String> nombres = new java.util.ArrayList<>();
+                for (MiembroGrupo m : integrantes) {
+                    nombres.add(m.getUsuario().getName());
+                }
+                detallesGrupo.put(miembro.getGrupo().getId(), String.join(", ", nombres));
             }
         }
 
         model.addAttribute("balancePorGrupo", balancePorGrupo);
+        model.addAttribute("detallesGrupo", detallesGrupo);
+        model.addAttribute("gruposActivosCount", gruposActivosCount);
 
         model.addAttribute("miembros", miembros);
 

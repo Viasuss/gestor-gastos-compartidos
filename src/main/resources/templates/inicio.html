@@ -11,67 +11,271 @@
     <title>Inicio · Partly</title>
 </head>
 <body>
-<main class="app">
 
-    <!-- BARRA SUPERIOR: logo + inicial del usuario -->
-    <header class="topbar-home">
-        <span class="brand">
-            <img class="brand-ring" th:src="@{/img/logo-icon.svg}" alt="">
+<!-- TOAST FLOTANTE DE NOTIFICACIÓN EN LA ESQUINA SUPERIOR DERECHA -->
+<div class="toast-container" id="toastContainer" th:if="${param.grupoCreado != null}">
+    <div class="toast-card" id="toastGrupoCreado">
+        <div class="toast-icon-circle success">✓</div>
+        <div class="toast-body">
+            <h4 class="toast-title">¡Grupo creado correctamente!</h4>
+            <p class="toast-message">
+                <span th:if="${param.nombre != null}">El grupo "<strong th:text="${param.nombre[0]}"></strong>" ha sido creado y las invitaciones enviadas.</span>
+                <span th:if="${param.nombre == null}">Tu nuevo grupo ha sido creado exitosamente.</span>
+            </p>
+        </div>
+        <button type="button" class="toast-close-btn" onclick="cerrarToastInicio('toastGrupoCreado')" title="Cerrar">✕</button>
+        <div class="toast-progress-bar success"></div>
+    </div>
+</div>
+
+<!-- BARRA DE NAVEGACIÓN SUPERIOR (TIPO COMPUTADOR) -->
+<header class="desktop-nav">
+    <div class="nav-container">
+        <!-- Izquierda: Marca Partly con punto verde -->
+        <a th:href="@{/inicio}" class="nav-brand">
+            <span class="nav-dot"></span>
             <span>partly</span>
-        </span>
-        <span class="avatar avatar-lg"
-              th:text="${#strings.toUpperCase(#strings.substring(session.usuario.name, 0, 1))}">J</span>
-    </header>
+        </a>
 
-    <h1 class="title">Hola, <span th:text="${session.usuario.name}">Johan</span></h1>
-    <p class="subtitle">Aquí va tu resumen de hoy</p>
+        <!-- Derecha: Perfil de usuario + Invitaciones con punto rojo + Botón Cerrar Sesión -->
+        <div class="nav-right">
+            <!-- Botón de Invitaciones con Punto Rojo en la esquina -->
+            <a th:href="@{/invitaciones}" title="Mis invitaciones" style="position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background-color: var(--surface-2); color: var(--text); text-decoration: none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span th:if="${(invitacionesPendientes != null and invitacionesPendientes > 0) or (session.invitacionesPendientes != null and session.invitacionesPendientes > 0)}"
+                      style="position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background-color: var(--negative); border: 2px solid #ffffff;"></span>
+            </a>
 
-    <!-- BALANCE TOTAL (viene de DeudaService.calcularBalanceGeneral) -->
-    <section class="balance">
-        <p class="balance-label">BALANCE TOTAL</p>
-        <div class="balance-row">
-            <div>
-                <small>Te deben</small>
-                <strong th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalLeDeben, 1, 'POINT', 0, 'COMMA')}">$0</strong>
+            <!-- Perfil / Panel de Control -->
+            <div class="user-badge user-badge-interactive" onclick="abrirPanelControl()" title="Abrir panel de control">
+                <span class="user-avatar"
+                      th:text="${#strings.toUpperCase(#strings.substring(session.usuario.name, 0, 1))}">J</span>
+                <span class="user-name" th:text="${session.usuario.name}">Usuario</span>
+                <span style="font-size: 10px; color: var(--text-muted); margin-left: 2px;">▾</span>
             </div>
-            <div class="right">
-                <small>Debes</small>
-                <strong th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalDebe, 1, 'POINT', 0, 'COMMA')}">$0</strong>
+
+        </div>
+    </div>
+</header>
+
+<!-- MODAL: PANEL DE CONTROL DE USUARIO & INTEGRACIÓN GOOGLE -->
+<div class="panel-modal-backdrop" id="panelControlBackdrop" onclick="cerrarPanelControl(event)">
+    <div class="panel-modal-card" onclick="event.stopPropagation()">
+        <!-- Header del Panel -->
+        <div class="panel-header-section">
+            <div class="panel-user-info-row">
+                <div class="panel-avatar-big"
+                     th:text="${#strings.toUpperCase(#strings.substring(session.usuario.name, 0, 1))}">J</div>
+                <div class="panel-user-names">
+                    <h3 class="panel-user-name" th:text="${session.usuario.name}">Johan Viasus</h3>
+                    <p class="panel-user-email" th:text="${session.usuario.email}">johan@ejemplo.com</p>
+                </div>
+            </div>
+            <button type="button" class="panel-close-btn" onclick="forzarCerrarPanel()" title="Cerrar panel">✕</button>
+        </div>
+
+        <!-- Cuerpo del Panel -->
+        <div class="panel-body-section">
+            <!-- Métricas rápidas de cuenta -->
+            <div class="panel-stats-grid">
+                <div class="panel-stat-item">
+                    <span class="panel-stat-label">GRUPOS ACTIVOS</span>
+                    <span class="panel-stat-value" th:text="${gruposDestacados != null ? gruposDestacados.size() : 0}">0</span>
+                </div>
+                <div class="panel-stat-item">
+                    <span class="panel-stat-label">ESTADO DE CUENTA</span>
+                    <span class="panel-stat-value" style="color: var(--positive); font-size: 13px;">✓ Activa</span>
+                </div>
+            </div>
+
+            <!-- Caja de Integración: Google Cloud / Conectar con Google -->
+            <div class="panel-integration-box">
+                <div class="panel-integration-title-row">
+                    <div class="panel-integration-title">
+                        <svg class="google-icon-svg" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span>Servicios de Google</span>
+                    </div>
+                    <span class="panel-badge-status info">Próximamente</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                    Conecta tu cuenta para iniciar sesión con un solo clic y sincronizar tus contactos de Google.
+                </p>
+                <button type="button" class="btn-google-connect" onclick="mostrarRequerimientosGoogle()">
+                    <svg class="google-icon-svg" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span>Conectar con Google</span>
+                </button>
+            </div>
+
+            <!-- Accesos y Salida -->
+                <a th:href="@{/logout}" class="btn-submit" style="height: 44px; background-color: var(--danger-bg); color: var(--danger-text); border-radius: 12px; font-size: 13px; font-weight: 700; margin-top: 4px;">
+                    <span>🚪 Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CONTENIDO PRINCIPAL ADAPTADO Y CENTRADO PARA COMPUTADOR -->
+<main class="app-container">
+
+    <!-- Saludo -->
+    <div class="home-greeting">
+        <h1>Hola, <span th:text="${session.usuario.name}">Johan</span></h1>
+        <p>Aquí va tu resumen de hoy</p>
+    </div>
+
+    <!-- TARJETA BALANCE TOTAL -->
+    <section class="balance-card">
+        <div class="balance-title">BALANCE TOTAL</div>
+        <div class="balance-values">
+            <div class="balance-col">
+                <span class="balance-caption">Te deben</span>
+                <span class="balance-number"
+                      th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalLeDeben, 1, 'POINT', 0, 'COMMA')}">$0</span>
+            </div>
+            <div class="balance-col right">
+                <span class="balance-caption">Debes</span>
+                <span class="balance-number debts"
+                      th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalDebe, 1, 'POINT', 0, 'COMMA')}">$0</span>
             </div>
         </div>
     </section>
 
     <!-- ACCIONES RÁPIDAS -->
-    <h3 class="section-title" style="margin-top:22px;">Acciones rápidas</h3>
-    <div class="quick-grid">
-        <a class="quick quick-primary" href="/grupo/crear"><span class="quick-icon"></span>Crear grupo</a>
-        <a class="quick" href="/mis-grupos"><span class="quick-icon"></span>Mis grupos</a>
-    </div>
-    <a class="quick quick-wide" href="/invitaciones"><span class="quick-icon has-dot"></span>Mis invitaciones</a>
-
-    <!-- TUS GRUPOS -->
-    <div class="section-head">
-        <h3>Tus grupos</h3>
-        <a href="/mis-grupos">Ver todos</a>
+    <div class="section-heading">
+        <h2>Acciones rápidas</h2>
     </div>
 
-    <div class="empty" th:if="${#lists.isEmpty(gruposDestacados)}">
-        Todavía no perteneces a ningún grupo.
-    </div>
-
-    <div th:unless="${#lists.isEmpty(gruposDestacados)}">
-        <div class="group-row" th:each="miembro : ${gruposDestacados}">
-            <span class="group-icon">👥</span>
-            <div class="group-info">
-                <p class="group-name" th:text="${miembro.grupo.name}">Nombre del grupo</p>
+    <div class="quick-actions-row">
+        <!-- Crear Grupo -->
+        <a th:href="@{/grupo/crear}" class="btn-quick btn-quick-primary">
+            <div class="quick-circle green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
             </div>
-            <a class="stretched" th:href="@{/grupo/{id}(id=${miembro.grupo.id})}" aria-label="Abrir grupo"></a>
+            <span>Crear grupo</span>
+        </a>
+
+        <!-- Mis Grupos -->
+        <a th:href="@{/mis-grupos}" class="btn-quick btn-quick-secondary">
+            <div class="quick-circle light-green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <span>Mis grupos</span>
+        </a>
+    </div>
+    <!-- TUS GRUPOS -->
+    <div class="section-heading">
+        <h2>Tus grupos</h2>
+        <a th:href="@{/mis-grupos}">Ver todos</a>
+    </div>
+
+    <div class="groups-list">
+        <div class="empty-state" th:if="${#lists.isEmpty(gruposDestacados)}">
+            Todavía no perteneces a ningún grupo. ¡Crea uno para empezar a compartir gastos!
+        </div>
+
+        <div th:unless="${#lists.isEmpty(gruposDestacados)}">
+            <a th:each="miembro : ${gruposDestacados}"
+               th:href="@{/grupo/{id}(id=${miembro.grupo.id})}"
+               class="group-card">
+                <div class="group-card-icon">👥</div>
+                <div class="group-card-info">
+                    <span class="group-card-name" th:text="${miembro.grupo.name}">Nombre del grupo</span>
+                    <span class="group-card-members"
+                          th:text="${miembrosPorGrupo.get(miembro.grupo.id)} + ' integrantes'">2 integrantes</span>
+                </div>
+
+                <div th:with="bal=${balancePorGrupo.get(miembro.grupo.id)}">
+                    <span th:if="${bal != null and bal.signum() > 0}"
+                          class="group-card-amount pos"
+                          th:text="'+ $' + ${#numbers.formatDecimal(bal, 1, 'POINT', 0, 'COMMA')}">+ $0</span>
+                    <span th:if="${bal != null and bal.signum() < 0}"
+                          class="group-card-amount neg"
+                          th:text="'- $' + ${#numbers.formatDecimal(bal.abs(), 1, 'POINT', 0, 'COMMA')}">- $0</span>
+                    <span th:if="${bal == null or bal.signum() == 0}"
+                          class="group-card-amount"
+                          style="color: var(--text-muted);">$0</span>
+                </div>
+            </a>
         </div>
     </div>
 
-    <!-- CERRAR SESIÓN -->
-    <a class="btn btn-soft-danger btn-block" href="/logout" style="margin-top:28px;">⏻ Cerrar sesión</a>
-
 </main>
+
+<script>
+    function cerrarToastInicio(id) {
+        const toast = document.getElementById(id);
+        if (toast) {
+            toast.classList.add('toast-hiding');
+            setTimeout(() => toast.remove(), 350);
+        }
+    }
+    const toastInicio = document.getElementById('toastGrupoCreado');
+    if (toastInicio) {
+        setTimeout(() => {
+            if (document.body.contains(toastInicio)) {
+                toastInicio.classList.add('toast-hiding');
+                setTimeout(() => toastInicio.remove(), 350);
+            }
+        }, 4200);
+    }
+
+    // ==========================================
+    // CONTROL DEL PANEL DE USUARIO
+    // ==========================================
+    function abrirPanelControl() {
+        const backdrop = document.getElementById('panelControlBackdrop');
+        if (backdrop) {
+            backdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function forzarCerrarPanel() {
+        const backdrop = document.getElementById('panelControlBackdrop');
+        if (backdrop) {
+            backdrop.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function cerrarPanelControl(e) {
+        if (e.target.id === 'panelControlBackdrop') {
+            forzarCerrarPanel();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            forzarCerrarPanel();
+        }
+    });
+
+    function mostrarRequerimientosGoogle() {
+        alert("Para habilitar la autenticación con Google se requiere registrar la aplicación en Google Cloud Console (Client ID y Client Secret). Revisa los requerimientos detallados que te proporcioné.");
+    }
+</script>
+
 </body>
 </html>
