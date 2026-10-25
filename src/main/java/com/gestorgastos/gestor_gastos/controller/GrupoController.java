@@ -23,6 +23,9 @@ import java.util.List;
 @Controller
 public class GrupoController {
 
+    // Largo máximo del nombre de un grupo
+    private static final int NOMBRE_MAXIMO = 60;
+
     private final GrupoRepository grupoRepository;
     private final UsuarioRepository usuarioRepository;
     private final MiembroGrupoRepository miembroGrupoRepository;
@@ -39,17 +42,14 @@ public class GrupoController {
 
 
     // ==========================================
-    // MOSTRAR PANTALLA PARA CREAR GRUPO
+    // LISTA TEMPORAL DE CORREOS (en la sesión)
     // ==========================================
 
-    @GetMapping("/grupo/crear")
-    public String mostrarCrearGrupo(
-            HttpSession session,
-            Model model) {
-
-        if (session.getAttribute("usuario") == null) {
-            return "redirect:/login";
-        }
+    // NUEVO: antes este mismo bloque (leer la lista de la sesión y crearla
+    // si no existía) estaba copiado en 4 métodos, cada uno con su propio
+    // cast sin verificar. Ahora vive en un solo lugar.
+    @SuppressWarnings("unchecked")
+    private List<String> obtenerUsuariosTemporales(HttpSession session) {
 
         List<String> usuariosTemporales =
                 (List<String>) session.getAttribute("usuariosTemporales");
@@ -64,9 +64,28 @@ public class GrupoController {
             );
         }
 
+        return usuariosTemporales;
+    }
+
+
+    // ==========================================
+    // MOSTRAR PANTALLA PARA CREAR GRUPO
+    // ==========================================
+
+    @GetMapping("/grupo/crear")
+    public String mostrarCrearGrupo(
+            HttpSession session,
+            Model model) {
+
+        if (session.getAttribute("usuario") == null) {
+            return "redirect:/login";
+        }
+
+        List<String> usuariosTemporales = obtenerUsuariosTemporales(session);
+
         List<Usuario> personasAgregadas = new ArrayList<>();
         for (String emailTemp : usuariosTemporales) {
-            usuarioRepository.findByEmail(emailTemp).ifPresent(personasAgregadas::add);
+            usuarioRepository.findByEmailIgnoreCase(emailTemp).ifPresent(personasAgregadas::add);
         }
         model.addAttribute("personasAgregadas", personasAgregadas);
         model.addAttribute(
@@ -94,41 +113,39 @@ public class GrupoController {
             return "redirect:/login";
         }
 
-        // NUEVO (bug corregido): no dejar agregar el propio correo.
-        // Antes solo se validaba que el correo no estuviera repetido
-        // EN LA LISTA, pero nunca se comparaba contra el usuario en
-        // sesión. Por eso alguien podía "invitarse a sí mismo": el
+        String emailLimpio = email == null ? "" : email.trim();
+
+        // Bug corregido antes: no dejar agregar el propio correo. El
         // creador ya queda como MIEMBRO automáticamente al crear el
-        // grupo, así que además terminaba duplicado como PENDIENTE.
-        // equalsIgnoreCase para que "Johan@Gmail.com" y "johan@gmail.com"
-        // se traten como el mismo correo.
-        if (email.equalsIgnoreCase(usuarioActual.getEmail())) {
+        // grupo. equalsIgnoreCase para que "Johan@Gmail.com" y
+        // "johan@gmail.com" se traten como el mismo correo.
+        if (emailLimpio.equalsIgnoreCase(usuarioActual.getEmail())) {
             return "redirect:/grupo/crear?error=propio";
         }
 
+        // CAMBIO: findByEmailIgnoreCase (igual que en el login). Antes se
+        // usaba findByEmail, que dependía de cómo estuviera configurada la
+        // base de datos para distinguir mayúsculas de minúsculas.
         Usuario usuario =
-                usuarioRepository.findByEmail(email).orElse(null);
+                usuarioRepository.findByEmailIgnoreCase(emailLimpio).orElse(null);
 
         if (usuario == null) {
             return "redirect:/grupo/crear?error=usuario";
         }
 
-        List<String> usuariosTemporales =
-                (List<String>) session.getAttribute("usuariosTemporales");
+        List<String> usuariosTemporales = obtenerUsuariosTemporales(session);
 
-        if (usuariosTemporales == null) {
+        // CAMBIO: guardamos el correo TAL COMO está registrado, no como lo
+        // escribió la persona. Así "ANA@x.com" y "ana@x.com" no entran
+        // dos veces a la lista.
+        String emailRegistrado = usuario.getEmail();
 
-            usuariosTemporales = new ArrayList<>();
+        boolean yaEstaEnLaLista = usuariosTemporales.stream()
+                .anyMatch(e -> e.equalsIgnoreCase(emailRegistrado));
 
-            session.setAttribute(
-                    "usuariosTemporales",
-                    usuariosTemporales
-            );
-        }
+        if (!yaEstaEnLaLista) {
 
-        if (!usuariosTemporales.contains(email)) {
-
-            usuariosTemporales.add(email);
+            usuariosTemporales.add(emailRegistrado);
         }
 
         return "redirect:/grupo/crear";
@@ -136,7 +153,7 @@ public class GrupoController {
 
 
     // ==========================================
-    // QUITAR USUARIO DE LA LISTA TEMPORAL (NUEVO)
+    // QUITAR USUARIO DE LA LISTA TEMPORAL
     // ==========================================
 
     // Botón "x" del Figma: permite quitar a alguien de "Personas agregadas"
@@ -150,12 +167,8 @@ public class GrupoController {
             return "redirect:/login";
         }
 
-        List<String> usuariosTemporales =
-                (List<String>) session.getAttribute("usuariosTemporales");
-
-        if (usuariosTemporales != null) {
-            usuariosTemporales.remove(email);
-        }
+        obtenerUsuariosTemporales(session)
+                .removeIf(e -> e.equalsIgnoreCase(email));
 
         return "redirect:/grupo/crear";
     }
@@ -168,7 +181,7 @@ public class GrupoController {
     @Transactional
     @PostMapping("/grupo/crear")
     public String crearGrupo(
-            @RequestParam String name,
+            @RequestParam(required = false) String name,
             HttpSession session) {
 
         Usuario usuarioActual =
@@ -178,12 +191,18 @@ public class GrupoController {
             return "redirect:/login";
         }
 
-        if (name == null || name.trim().isBlank()) {
+        // CAMBIO: antes se validaba el nombre ya recortado, pero se
+        // guardaba el original (con los espacios de los costados). Ahora
+        // se guarda el recortado, y también se limita el largo.
+        String nombreLimpio = name == null ? "" : name.trim();
+
+        if (nombreLimpio.isEmpty() || nombreLimpio.length() > NOMBRE_MAXIMO) {
             return "redirect:/grupo/crear?error=nombre";
         }
+
         Grupo grupo = new Grupo();
 
-        grupo.setName(name);
+        grupo.setName(nombreLimpio);
         grupo.setCreador(usuarioActual);
         grupo.setFechaCreacion(LocalDate.now());
 
@@ -207,31 +226,28 @@ public class GrupoController {
         // AGREGAR USUARIOS INVITADOS
         // ==========================================
 
-        List<String> usuariosTemporales =
-                (List<String>) session.getAttribute("usuariosTemporales");
+        for (String email : obtenerUsuariosTemporales(session)) {
 
-        if (usuariosTemporales != null) {
+            Usuario usuario =
+                    usuarioRepository
+                            .findByEmailIgnoreCase(email)
+                            .orElse(null);
 
-            for (String email : usuariosTemporales) {
+            // El creador ya es MIEMBRO: no se le crea además una
+            // invitación pendiente
+            if (usuario != null
+                    && !usuario.getId().equals(usuarioActual.getId())) {
 
-                Usuario usuario =
-                        usuarioRepository
-                                .findByEmail(email)
-                                .orElse(null);
+                MiembroGrupo miembro =
+                        new MiembroGrupo();
 
-                if (usuario != null) {
+                miembro.setUsuario(usuario);
+                miembro.setGrupo(grupo);
+                miembro.setEstado(
+                        EstadoMiembro.PENDIENTE
+                );
 
-                    MiembroGrupo miembro =
-                            new MiembroGrupo();
-
-                    miembro.setUsuario(usuario);
-                    miembro.setGrupo(grupo);
-                    miembro.setEstado(
-                            EstadoMiembro.PENDIENTE
-                    );
-
-                    miembroGrupoRepository.save(miembro);
-                }
+                miembroGrupoRepository.save(miembro);
             }
         }
 

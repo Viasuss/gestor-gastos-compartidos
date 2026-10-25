@@ -120,9 +120,11 @@
             </div>
 
             <!-- Accesos y Salida -->
-                <a th:href="@{/logout}" class="btn-submit" style="height: 44px; background-color: var(--danger-bg); color: var(--danger-text); border-radius: 12px; font-size: 13px; font-weight: 700; margin-top: 4px;">
+            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                <button type="submit" class="btn-submit" style="height: 44px; background-color: var(--danger-bg); color: var(--danger-text); border: none; cursor: pointer; border-radius: 12px; font-size: 13px; font-weight: 700; margin-top: 4px;">
                     <span>🚪 Cerrar sesión</span>
-                </a>
+                </button>
+            </form>
             </div>
         </div>
     </div>

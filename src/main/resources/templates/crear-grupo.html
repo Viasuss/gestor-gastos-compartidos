@@ -24,7 +24,7 @@
             <h4 class="toast-title" th:if="${param.error[0] == 'usuario'}">Usuario no encontrado</h4>
 
             <p class="toast-message" th:if="${param.error[0] == 'nombre'}">
-                Debes escribir un nombre para el grupo antes de crearlo.
+                Escribe un nombre para el grupo (máximo 60 caracteres).
             </p>
             <p class="toast-message" th:if="${param.error[0] == 'propio'}">
                 Ya perteneces al grupo automáticamente como su creador.
@@ -127,6 +127,7 @@
             id="groupNameInput"
             name="name"
             class="form-input"
+            maxlength="60"
             style="height: 52px;"
             placeholder="Ej: Viaje a Cartagena"
             required>

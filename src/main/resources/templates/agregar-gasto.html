@@ -35,7 +35,25 @@
             La suma de lo que pagó cada persona no coincide con el monto total del gasto.
         </div>
         <div class="alert-message" th:if="${param.error != null and param.error[0] == 'pagos'}">
-            Hubo un problema con los pagadores del gasto. Intenta nuevamente.
+            Revisa los pagadores: cada uno debe ser miembro del grupo y no puede repetirse.
+        </div>
+        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'pagadores'}">
+            Marca al menos a una persona que pagó.
+        </div>
+        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'pagomonto'}">
+            Cada pagador marcado debe tener un monto mayor a $0.
+        </div>
+        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'participantes'}">
+            Elige al menos a una persona para dividir el gasto (todas deben ser miembros del grupo).
+        </div>
+        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'monto'}">
+            Escribe un monto total mayor a $0.
+        </div>
+        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'descripcion'}">
+            Escribe una descripción (máximo 100 caracteres).
+        </div>
+        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'fecha'}">
+            La fecha del gasto no es válida.
         </div>
 
         <!-- CAMPO: DESCRIPCIÓN -->
@@ -47,6 +65,7 @@
                 type="text"
                 id="descripcion"
                 name="descripcion"
+                maxlength="100"
                 class="form-input"
                 style="height: 52px; background-color: #F5F0E5;"
                 placeholder="Ej: Mercado, hospedaje..."

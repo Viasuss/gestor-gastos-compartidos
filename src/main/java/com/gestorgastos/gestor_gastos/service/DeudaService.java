@@ -15,29 +15,35 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 // @Service: capa de lógica de negocio, entre el controlador y los repositorios.
 //
-// CAMBIO IMPORTANTE (Sprint 6, ampliación): antes este servicio asumía
-// "un gasto = un solo pagador que puso el 100%". Ahora un gasto puede
-// tener VARIOS pagadores, cada uno con su propio monto (tabla PagoGasto).
-//
-// La nueva fórmula central, para cada persona en cada gasto, es:
+// Un gasto puede tener VARIOS pagadores, cada uno con su propio monto
+// (tabla PagoGasto). La fórmula central, para cada persona en cada gasto:
 //
 //     saldo_en_este_gasto = lo_que_puso - lo_que_le_tocaba_pagar
 //
-// Donde "lo que le tocaba pagar" es monto_total / cantidad_de_participantes.
-// Si el saldo es positivo, puso de más -> le deben esa diferencia.
-// Si el saldo es negativo, puso de menos (o nada) -> debe esa diferencia.
+// Saldo positivo: puso de más -> le deben esa diferencia.
+// Saldo negativo: puso de menos (o nada) -> debe esa diferencia.
 //
-// Como puede haber varias personas con saldo positivo y varias con saldo
-// negativo en un mismo gasto (no un único "pagador" contra todos), hay
-// que repartir esas deudas entre ellas. Usamos un reparto proporcional
-// simple: cada "deudor" le paga a cada "acreedor" en proporción a cuánto
-// necesita cada acreedor, hasta saldar todo.
+// CAMBIO (revisión de calidad): la app trabaja con PESOS ENTEROS (sin
+// centavos), así que TODO el cálculo se hace en pesos enteros:
+//
+//  - Antes la parte de cada uno era monto / participantes con 2 decimales.
+//    Con $100.000 entre 3 daba $33.333,33 para cada uno: la suma de las
+//    partes ($99.999,99) ya no coincidía con el monto, y aparecían deudas
+//    fantasma de $0,33 incluso cuando todos habían pagado su parte exacta.
+//  - Ahora la parte es el cociente entero, y los pesos que sobran se
+//    reparten de a uno entre los primeros participantes (ordenados por id,
+//    para que el resultado siempre sea el mismo). $100.000 entre 3 queda
+//    $33.334 + $33.333 + $33.333 = $100.000 exactos.
+//  - Como los saldos suman exactamente cero, el balance de todos los
+//    integrantes también suma cero: lo que unos deben es lo que otros cobran.
 @Service
 public class DeudaService {
 
@@ -63,8 +69,9 @@ public class DeudaService {
 
         for (Gasto gasto : gastos) {
 
+            // Copia mutable, porque la vamos a ordenar
             List<GastoParticipante> participantes =
-                    gastoParticipanteRepository.findByGastoId(gasto.getId());
+                    new ArrayList<>(gastoParticipanteRepository.findByGastoId(gasto.getId()));
 
             if (participantes.isEmpty()) {
                 continue;
@@ -77,25 +84,40 @@ public class DeudaService {
                 continue;
             }
 
-            // 1. Cuánto le toca pagar a cada participante (parte igual)
+            // Orden fijo por id de usuario: así el peso que sobra al dividir
+            // siempre cae en las mismas personas, cada vez que se calcula.
+            participantes.sort(Comparator.comparing(p -> p.getUsuario().getId()));
+
+            // 1. Cuánto le toca pagar a cada participante, en pesos enteros
             BigDecimal cantidadParticipantes =
-                    new BigDecimal(participantes.size());
+                    BigDecimal.valueOf(participantes.size());
 
-            BigDecimal partePorPersona = gasto.getMonto()
-                    .divide(cantidadParticipantes, 2, RoundingMode.HALF_UP);
+            BigDecimal montoEntero =
+                    gasto.getMonto().setScale(0, RoundingMode.HALF_UP);
 
-            // 2. Armamos el saldo de CADA persona involucrada en este gasto:
-            //    saldo = lo que puso - lo que le tocaba pagar.
-            //    Usamos un mapa (id de usuario -> saldo) solo para este
-            //    gasto en particular, distinto del mapa general de arriba.
+            BigDecimal parteBase =
+                    montoEntero.divide(cantidadParticipantes, 0, RoundingMode.DOWN);
+
+            // Pesos que sobran al dividir (siempre menos que participantes)
+            int pesosSobrantes = montoEntero
+                    .subtract(parteBase.multiply(cantidadParticipantes))
+                    .intValue();
+
+            // 2. Saldo de CADA persona involucrada en este gasto
             Map<Long, Usuario> personasDelGasto = new LinkedHashMap<>();
             Map<Long, BigDecimal> saldosDelGasto = new LinkedHashMap<>();
 
-            // Empezamos a todos los participantes en "-parte" (les toca pagar)
+            int posicion = 0;
             for (GastoParticipante p : participantes) {
                 Usuario u = p.getUsuario();
+
+                BigDecimal parte = posicion < pesosSobrantes
+                        ? parteBase.add(BigDecimal.ONE)
+                        : parteBase;
+                posicion++;
+
                 personasDelGasto.put(u.getId(), u);
-                saldosDelGasto.put(u.getId(), partePorPersona.negate());
+                saldosDelGasto.put(u.getId(), parte.negate());
             }
 
             // A cada pagador le sumamos lo que puso (puede no ser
@@ -104,34 +126,30 @@ public class DeudaService {
                 Usuario u = pago.getUsuario();
                 personasDelGasto.put(u.getId(), u);
 
-                BigDecimal saldoActual =
-                        saldosDelGasto.getOrDefault(u.getId(), BigDecimal.ZERO);
+                BigDecimal montoPago =
+                        pago.getMonto().setScale(0, RoundingMode.HALF_UP);
 
-                saldosDelGasto.put(u.getId(), saldoActual.add(pago.getMonto()));
+                saldosDelGasto.merge(u.getId(), montoPago, BigDecimal::add);
             }
 
-            // 3. Separamos quién quedó con saldo positivo (le deben,
-            //    "acreedores" de este gasto) y quién con saldo negativo
-            //    (debe, "deudores" de este gasto)
+            // 3. Acreedores (saldo positivo) y deudores (saldo negativo).
+            //    Saldo exactamente 0 = a paz y salvo en este gasto.
             List<Long> acreedores = new ArrayList<>();
             List<Long> deudores = new ArrayList<>();
 
             for (Map.Entry<Long, BigDecimal> entry : saldosDelGasto.entrySet()) {
 
-                int comparacion = entry.getValue().compareTo(BigDecimal.ZERO);
+                int comparacion = entry.getValue().signum();
 
                 if (comparacion > 0) {
                     acreedores.add(entry.getKey());
                 } else if (comparacion < 0) {
                     deudores.add(entry.getKey());
                 }
-                // si es exactamente 0, esa persona quedó a paz y salvo
-                // en este gasto puntual, no participa del reparto
             }
 
             // 4. Solo nos interesa este gasto si nuestro "usuario" fue
-            //    acreedor o deudor en él. Si quedó en 0 (o no participó
-            //    ni pagó), este gasto no le genera ningún movimiento.
+            //    acreedor o deudor en él.
             boolean usuarioInvolucrado =
                     acreedores.contains(usuario.getId()) ||
                             deudores.contains(usuario.getId());
@@ -140,11 +158,8 @@ public class DeudaService {
                 continue;
             }
 
-            // 5. Repartimos las deudas: cada deudor le paga a cada acreedor,
-            //    en proporción a cuánto necesita cobrar cada acreedor.
-            //    Usamos copias mutables de los saldos para ir "gastando"
-            //    lo que cada quien debe/necesita cobrar a medida que se
-            //    reparte.
+            // 5. Repartimos las deudas: cada deudor le paga a cada acreedor
+            //    en proporción a cuánto necesita cobrar cada uno.
             Map<Long, BigDecimal> pendientePorCobrar = new LinkedHashMap<>();
             for (Long idAcreedor : acreedores) {
                 pendientePorCobrar.put(idAcreedor, saldosDelGasto.get(idAcreedor));
@@ -155,54 +170,86 @@ public class DeudaService {
                 BigDecimal deudaRestante = saldosDelGasto.get(idDeudor).abs();
                 BigDecimal totalPorCobrar = sumar(pendientePorCobrar.values());
 
+                if (totalPorCobrar.signum() <= 0) {
+                    break;
+                }
+
+                // 5a. Reparto proporcional, redondeado HACIA ABAJO a pesos
+                //     enteros (multiplicamos primero y dividimos después,
+                //     para no perder precisión). Nunca se le asigna a un
+                //     acreedor más de lo que le falta por cobrar.
+                Map<Long, BigDecimal> asignado = new LinkedHashMap<>();
+                BigDecimal asignadoTotal = BigDecimal.ZERO;
+
                 for (Long idAcreedor : acreedores) {
 
-                    if (deudaRestante.compareTo(BigDecimal.ZERO) == 0) {
+                    BigDecimal necesita = pendientePorCobrar.get(idAcreedor);
+
+                    BigDecimal parte = deudaRestante
+                            .multiply(necesita)
+                            .divide(totalPorCobrar, 0, RoundingMode.DOWN)
+                            .min(necesita);
+
+                    asignado.put(idAcreedor, parte);
+                    asignadoTotal = asignadoTotal.add(parte);
+                }
+
+                // 5b. Los pesos que sobraron por el redondeo hacia abajo se
+                //     reparten de a uno, para que esta persona pague
+                //     exactamente lo que debe.
+                BigDecimal porAsignar = deudaRestante.subtract(asignadoTotal);
+
+                for (Long idAcreedor : acreedores) {
+
+                    if (porAsignar.signum() <= 0) {
                         break;
                     }
 
-                    BigDecimal necesitaEsteAcreedor =
-                            pendientePorCobrar.get(idAcreedor);
+                    BigDecimal libre = pendientePorCobrar.get(idAcreedor)
+                            .subtract(asignado.get(idAcreedor));
 
-                    if (necesitaEsteAcreedor.compareTo(BigDecimal.ZERO) <= 0) {
+                    if (libre.signum() > 0) {
+                        asignado.put(idAcreedor, asignado.get(idAcreedor).add(BigDecimal.ONE));
+                        porAsignar = porAsignar.subtract(BigDecimal.ONE);
+                    }
+                }
+
+                // 5c. Registramos el movimiento solo si involucra a nuestro
+                //     "usuario" (como deudor o como acreedor)
+                for (Long idAcreedor : acreedores) {
+
+                    BigDecimal montoAsignado = asignado.get(idAcreedor);
+
+                    if (montoAsignado.signum() <= 0) {
                         continue;
                     }
 
-                    // Proporción: cuánto de esta deuda le corresponde
-                    // a este acreedor específico, según lo que necesita
-                    // cobrar frente al total que falta por cobrar
-                    BigDecimal proporcion = necesitaEsteAcreedor
-                            .divide(totalPorCobrar, 10, RoundingMode.HALF_UP);
-
-                    BigDecimal montoAsignado = deudaRestante
-                            .multiply(proporcion)
-                            .setScale(2, RoundingMode.HALF_UP);
-
-                    if (montoAsignado.compareTo(BigDecimal.ZERO) <= 0) {
-                        continue;
-                    }
-
-                    // Solo nos importa registrar el movimiento si involucra
-                    // a nuestro "usuario" (como deudor o como acreedor)
                     if (idDeudor.equals(usuario.getId())) {
                         // Nuestro usuario le debe a este acreedor
-                        Usuario acreedor = personasDelGasto.get(idAcreedor);
-                        acumular(resumenPorPersona, acreedor, montoAsignado.negate());
+                        acumular(resumenPorPersona,
+                                personasDelGasto.get(idAcreedor),
+                                montoAsignado.negate());
                     } else if (idAcreedor.equals(usuario.getId())) {
                         // Este deudor le debe a nuestro usuario
-                        Usuario deudor = personasDelGasto.get(idDeudor);
-                        acumular(resumenPorPersona, deudor, montoAsignado);
+                        acumular(resumenPorPersona,
+                                personasDelGasto.get(idDeudor),
+                                montoAsignado);
                     }
 
                     pendientePorCobrar.put(
                             idAcreedor,
-                            necesitaEsteAcreedor.subtract(montoAsignado)
+                            pendientePorCobrar.get(idAcreedor).subtract(montoAsignado)
                     );
                 }
             }
         }
 
-        return new ArrayList<>(resumenPorPersona.values());
+        // Defensa extra: si dos gastos se cancelan entre sí (o queda algún
+        // resto menor a $1), esa persona no aparece como "te debe $0".
+        List<DeudaConPersona> resultado = new ArrayList<>(resumenPorPersona.values());
+        resultado.removeIf(d -> d.getMonto().abs().compareTo(BigDecimal.ONE) < 0);
+
+        return resultado;
     }
 
     private BigDecimal sumar(Iterable<BigDecimal> valores) {
@@ -243,35 +290,54 @@ public class DeudaService {
 
 
     // ==========================================
-    // BALANCE GENERAL (NUEVO): across TODOS los grupos del usuario
+    // BALANCE GENERAL: across TODOS los grupos del usuario
     // ==========================================
 
-    // Para la tarjeta "BALANCE TOTAL" de inicio.html (el Figma: "Te deben
-    // $210.000" / "Debes $75.000"). A propósito, esto NO "netea" las
-    // deudas entre grupos distintos: si en el Grupo A le debes $20.000
-    // a Wilmer, y en el Grupo B Wilmer te debe $50.000, el resultado es
-    // "Te deben $50.000" y "Debes $20.000" por separado — no un neto de
-    // "$30.000 a tu favor". Esto es consistente con que cada grupo ya
-    // se calcula y se muestra de forma independiente en grupo.html; el
-    // balance general es, simplemente, la suma de esos totales por grupo.
-    public BalanceGeneral calcularBalanceGeneral(List<Grupo> grupos, Usuario usuario) {
+    // Para la tarjeta "BALANCE TOTAL" de inicio.html. A propósito, esto NO
+    // "netea" las deudas entre grupos distintos: si en el Grupo A le debes
+    // $20.000 a Wilmer, y en el Grupo B Wilmer te debe $50.000, el
+    // resultado es "Te deben $50.000" y "Debes $20.000" por separado.
+
+    // NUEVO: calcula el balance de cada grupo UNA sola vez. Antes,
+    // inicio calculaba dos veces el balance de los grupos destacados (una
+    // para el general y otra para la tarjeta de cada grupo), y cada cálculo
+    // hace varias consultas a la base de datos. Ahora el controlador pide
+    // este mapa (id de grupo -> balance) y reutiliza el resultado.
+    public Map<Long, BigDecimal> calcularBalancesPorGrupo(List<Grupo> grupos, Usuario usuario) {
+
+        Map<Long, BigDecimal> balances = new LinkedHashMap<>();
+
+        for (Grupo grupo : grupos) {
+            balances.put(grupo.getId(), calcularBalanceTotal(grupo, usuario));
+        }
+
+        return balances;
+    }
+
+    // NUEVO: convierte esos balances en el "te deben / debes" general
+    public BalanceGeneral resumirBalances(Collection<BigDecimal> balancesPorGrupo) {
 
         BigDecimal totalLeDeben = BigDecimal.ZERO;
         BigDecimal totalDebe = BigDecimal.ZERO;
 
-        for (Grupo grupo : grupos) {
-
-            BigDecimal balanceDelGrupo = calcularBalanceTotal(grupo, usuario);
+        for (BigDecimal balanceDelGrupo : balancesPorGrupo) {
 
             // Positivo: en este grupo, en total, le deben a él.
             // Negativo: en este grupo, en total, él debe.
-            if (balanceDelGrupo.compareTo(BigDecimal.ZERO) > 0) {
+            if (balanceDelGrupo.signum() > 0) {
                 totalLeDeben = totalLeDeben.add(balanceDelGrupo);
-            } else if (balanceDelGrupo.compareTo(BigDecimal.ZERO) < 0) {
+            } else if (balanceDelGrupo.signum() < 0) {
                 totalDebe = totalDebe.add(balanceDelGrupo.abs());
             }
         }
 
         return new BalanceGeneral(totalLeDeben, totalDebe);
+    }
+
+    // Se mantiene por compatibilidad: hace lo mismo que antes, pero
+    // apoyándose en los dos métodos de arriba.
+    public BalanceGeneral calcularBalanceGeneral(List<Grupo> grupos, Usuario usuario) {
+
+        return resumirBalances(calcularBalancesPorGrupo(grupos, usuario).values());
     }
 }

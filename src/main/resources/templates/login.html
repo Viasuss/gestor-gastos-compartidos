@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/partly.css}">
     <title>Iniciar sesión · Partly</title>
+
+    <!-- Script Oficial de Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div class="auth-wrapper">
@@ -27,14 +30,17 @@
         </div>
 
         <!-- Mensajes de Estado -->
-        <div class="alert-message" th:if="${param.error}">
+        <div class="alert-message" th:if="${param.error != null and param.error[0] != 'google'}">
             Correo o contraseña incorrectos. Intenta nuevamente.
+        </div>
+        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'google'}">
+            No se pudo autenticar con Google. Por favor intenta de nuevo.
         </div>
         <div class="alert-message success" th:if="${param.registrado}">
             ¡Cuenta creada exitosamente! Ya puedes iniciar sesión.
         </div>
 
-        <!-- Formulario -->
+        <!-- Formulario Tradicional -->
         <form th:action="@{/login}" method="post">
             <div class="form-group">
                 <label for="email" class="form-label">Correo electrónico</label>
@@ -71,8 +77,8 @@
             <div class="divider-line"></div>
         </div>
 
-        <!-- Botón Continuar con Google -->
-        <button type="button" class="btn-google-connect" onclick="alert('Para activar el inicio de sesión con Google se necesita configurar Client ID en Google Cloud Console. Revisa los requerimientos detallados.')" style="height: 50px; font-size: 14px;">
+        <!-- Botón Oficial de Google Sign-In -->
+        <button type="button" class="btn-google-connect" onclick="iniciarGoogleAuth()" style="height: 50px; font-size: 14px;">
             <svg class="google-icon-svg" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -89,5 +95,50 @@
 
     </main>
 </div>
+
+<!-- Formulario Oculto para POST hacia /auth/google -->
+<form id="googleSubmitForm" th:action="@{/auth/google}" method="post" style="display: none;">
+    <input type="hidden" name="credential" id="googleCredentialInput">
+</form>
+
+<script th:inline="javascript">
+    const googleClientId = /*[[${googleClientId}]]*/ 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
+    function handleGoogleCredentialResponse(response) {
+        if (response && response.credential) {
+            document.getElementById('googleCredentialInput').value = response.credential;
+            document.getElementById('googleSubmitForm').submit();
+        }
+    }
+
+    function iniciarGoogleAuth() {
+        if (!googleClientId || googleClientId.includes('YOUR_GOOGLE_CLIENT_ID')) {
+            alert("⚙️ Configuración requerida de Google Cloud:\n\nPara iniciar sesión con tu cuenta de Google, registra tu Client ID en el archivo 'application.properties' bajo la clave:\n\ngoogle.client.id=TU_CLIENT_ID.apps.googleusercontent.com\n\nEl endpoint backend /auth/google ya está 100% listo para recibir y autenticar las credenciales.");
+            return;
+        }
+
+        if (window.google && window.google.accounts) {
+            google.accounts.id.initialize({
+                client_id: googleClientId,
+                callback: handleGoogleCredentialResponse
+            });
+            google.accounts.id.prompt();
+        } else {
+            alert("Cargando servicios de Google... Por favor espera un segundo e intenta de nuevo.");
+        }
+    }
+
+    // Inicializar Google One Tap si el Client ID está configurado
+    window.addEventListener('load', () => {
+        if (window.google && window.google.accounts && googleClientId && !googleClientId.includes('YOUR_GOOGLE_CLIENT_ID')) {
+            google.accounts.id.initialize({
+                client_id: googleClientId,
+                callback: handleGoogleCredentialResponse
+            });
+            google.accounts.id.prompt();
+        }
+    });
+</script>
+
 </body>
 </html>
