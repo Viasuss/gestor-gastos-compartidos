@@ -47,6 +47,9 @@ public class ResourceManager {
     @Value("${nexus.ai.resource.daily-token-budget:150000}")
     private long dailyTokenBudget;
 
+    @Value("${nexus.ai.resource.tpm-limit:6000}")
+    private long tpmLimit;
+
     @Value("${nexus.ai.resource.reserve-percent:10}")
     private int reservePercent;
 
@@ -59,7 +62,10 @@ public class ResourceManager {
     @Value("${nexus.ai.resource.circuit-open-seconds:60}")
     private long circuitOpenSeconds;
 
+    private record TokenWindowEntry(Instant timestamp, long tokens) {}
+
     private final Deque<Instant> globalMinuteWindow = new ConcurrentLinkedDeque<>();
+    private final Deque<TokenWindowEntry> globalTokenMinuteWindow = new ConcurrentLinkedDeque<>();
     private final Map<Long, Deque<Instant>> userMinuteWindows = new ConcurrentHashMap<>();
     private final Map<String, Integer> consecutiveFailures = new ConcurrentHashMap<>();
     private final Map<String, Instant> circuitOpenUntil = new ConcurrentHashMap<>();
@@ -124,6 +130,13 @@ public class ResourceManager {
                 return false;
             }
 
+            pruneOldTokens(globalTokenMinuteWindow, oneMinuteAgo);
+            long tokensLastMinute = globalTokenMinuteWindow.stream().mapToLong(TokenWindowEntry::tokens).sum();
+            long effectiveTpm = (long) Math.floor(tpmLimit * (100.0 - reservePercent) / 100.0);
+            if ((tokensLastMinute + estimatedTokens) > effectiveTpm) {
+                return false;
+            }
+
             Deque<Instant> userWindow = userMinuteWindows.computeIfAbsent(userId, k -> new ConcurrentLinkedDeque<>());
             pruneOld(userWindow, oneMinuteAgo);
             if (userWindow.size() >= userRpmLimit) {
@@ -151,6 +164,7 @@ public class ResourceManager {
             }
 
             globalMinuteWindow.addLast(now);
+            globalTokenMinuteWindow.addLast(new TokenWindowEntry(now, estimatedTokens));
             userWindow.addLast(now);
             userConsumo.setSolicitudes(userConsumo.getSolicitudes() + 1);
             userConsumo.setTokensEstimados(userConsumo.getTokensEstimados() + estimatedTokens);
@@ -189,6 +203,12 @@ public class ResourceManager {
 
     private void pruneOld(Deque<Instant> deque, Instant cutoff) {
         while (!deque.isEmpty() && deque.peekFirst().isBefore(cutoff)) {
+            deque.pollFirst();
+        }
+    }
+
+    private void pruneOldTokens(Deque<TokenWindowEntry> deque, Instant cutoff) {
+        while (!deque.isEmpty() && deque.peekFirst().timestamp().isBefore(cutoff)) {
             deque.pollFirst();
         }
     }

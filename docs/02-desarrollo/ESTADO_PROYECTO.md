@@ -1,7 +1,7 @@
 # Estado del Proyecto — Partly
 
-**Última actualización:** 2026-11-25 (Bloque `B3` — Integración colaborativa, `ResourceManager`, Groq Free y Bandeja Inteligente)  
-**Rama base:** `main` @ `761bc67` / Integración colaborativa `integracion/nexus-b2-colaborativa` @ `7a0b18d` / Desarrollo `feature/acelerado-b3-inteligencia`  
+**Última actualización:** 2026-11-25 (Bloque `B4` — Conectividad Telegram Bot API y TPM en `ResourceManager`)  
+**Rama base:** `main` @ `761bc67` / Integración colaborativa `integracion/nexus-b2-colaborativa` @ `7a0b18d` / Desarrollo `feature/acelerado-b4-telegram`  
 **Presupuesto:** `$0 COP`
 
 ---

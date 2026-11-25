@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integraciones — Conectar Telegram</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+</head>
+<body>
+<div class="app-container">
+    <header class="top-bar">
+        <a th:href="@{/inicio}" class="btn-back" aria-label="Volver al inicio">←</a>
+        <h1 class="top-bar-title">Integraciones</h1>
+        <span style="width: 38px;"></span>
+    </header>
+
+    <main class="page-content">
+        <div th:if="${mensajeIntegracion}" class="toast-card" style="margin-bottom: 16px;" th:text="${mensajeIntegracion}">
+            Mensaje
+        </div>
+
+        <section class="section-block" style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="section-block-title" style="font-size: 16px; margin: 0;">Telegram Bot API</h2>
+                <span style="font-size: 12px; font-weight: 600;"
+                      th:text="${telegramHabilitado ? 'Proveedor activo' : 'Proveedor deshabilitado (modo local)'}">
+                    Estado
+                </span>
+            </div>
+
+            <div th:if="${cuentaTelegram != null}" class="expense-card" style="display: flex; flex-direction: column; gap: 8px;">
+                <strong>Cuenta vinculada</strong>
+                <span style="font-size: 13px;" th:text="${'ID externo Telegram: ' + cuentaTelegram.identificadorExterno}">ID</span>
+                <span style="font-size: 12px; color: #5C6B66;"
+                      th:text="${'Vinculada el: ' + #temporals.format(cuentaTelegram.fechaVinculacion, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                <form th:action="@{/integraciones/telegram/desvincular}" method="post" style="margin-top: 6px;">
+                    <button type="submit" class="btn-quick btn-quick-secondary" style="height: 40px; width: 100%;">
+                        Desvincular Telegram
+                    </button>
+                </form>
+            </div>
+
+            <div th:if="${cuentaTelegram == null}" style="display: flex; flex-direction: column; gap: 10px;">
+                <p class="section-block-desc" style="font-size: 13px; margin: 0;">
+                    Genera un código temporal de un solo uso (expira en 10 minutos) y envíalo en chat privado al bot con <code>/vincular &lt;CODIGO&gt;</code>.
+                </p>
+
+                <form th:action="@{/integraciones/telegram/codigo}" method="post">
+                    <button type="submit" class="btn-submit" style="height: 46px; width: 100%;">
+                        Vincular Telegram
+                    </button>
+                </form>
+            </div>
+
+            <div th:if="${codigoTemporal}" class="expense-card" style="display: flex; flex-direction: column; gap: 8px;">
+                <span>Tu código temporal de un solo uso:</span>
+                <strong style="font-size: 20px; letter-spacing: 2px;" th:text="${codigoTemporal}">NX-XXXXXXXX</strong>
+                <span style="font-size: 12px;">Envía en chat privado: <code th:text="${'/vincular ' + codigoTemporal}">/vincular</code></span>
+                <a th:if="${deepLink}" th:href="${deepLink}" target="_blank" rel="noopener noreferrer"
+                   class="btn-quick btn-quick-primary" style="height: 40px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                    Abrir bot en Telegram
+                </a>
+            </div>
+
+            <p style="font-size: 12px; color: #5C6B66; margin: 0;"
+               th:text="${groupsEnabled ? 'Integración grupal habilitada: usa /vincular_grupo <ID> siendo administrador.' : 'Integración grupal deshabilitada.'}">
+                Grupos
+            </p>
+        </section>
+    </main>
+</div>
+</body>
+</html>
