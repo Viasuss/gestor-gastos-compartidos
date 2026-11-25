@@ -1,7 +1,7 @@
 # Estado del Proyecto — NEXUS (anteriormente Partly)
 
-**Última actualización:** 2026-11-25 (Cierre B6.2.4, B6.3 y B6.4 — Validación Real MySQL/Telegram/Multicanal + Refinamiento)  
-**Rama base:** `main` @ `761bc67` / `develop` @ `c776127` / `release/nexus-v1.0-rc1` @ `07e6ce8` / Desarrollo `feature/acelerado-b6-2-integraciones-reales`  
+**Última actualización:** 2026-11-25 (B7 — Integración Definitiva y Cierre de Versión Universitaria `v1.0.0`)  
+**Rama base:** `main` (`v1.0.0`) / `develop` / `release/nexus-v1.0-rc1` @ `07e6ce8` / Candidata `feature/acelerado-b6-2-integraciones-reales`  
 **Presupuesto:** `$0 COP`
 
 ---
