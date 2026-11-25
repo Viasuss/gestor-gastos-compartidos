@@ -18,7 +18,7 @@ public class IntegracionesController {
     @Value("${nexus.telegram.bot-username:}")
     private String botUsername;
 
-    @Value("${nexus.telegram.groups-enabled:true}")
+    @Value("${nexus.telegram.groups-enabled:false}")
     private boolean groupsEnabled;
 
     private final TelegramAccountLinkService linkService;

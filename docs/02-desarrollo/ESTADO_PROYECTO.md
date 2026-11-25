@@ -1,7 +1,7 @@
-# Estado del Proyecto — Partly
+# Estado del Proyecto — NEXUS (anteriormente Partly)
 
-**Última actualización:** 2026-11-25 (Bloque `B4` — Conectividad Telegram Bot API y TPM en `ResourceManager`)  
-**Rama base:** `main` @ `761bc67` / Integración colaborativa `integracion/nexus-b2-colaborativa` @ `7a0b18d` / Desarrollo `feature/acelerado-b4-telegram`  
+**Última actualización:** 2026-11-25 (Bloque `B5` — Identidad Visual NEXUS, Experiencia de Usuario, PWA y Preflight Operativo)  
+**Rama base:** `main` @ `761bc67` / Integración colaborativa `integracion/nexus-b2-colaborativa` @ `7a0b18d` / B4 publicado `feature/acelerado-b4-telegram` @ `bcf4483` / Desarrollo actual `feature/acelerado-b5-experiencia-pwa`  
 **Presupuesto:** `$0 COP`
 
 ---

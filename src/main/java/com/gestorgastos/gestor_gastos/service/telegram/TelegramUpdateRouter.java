@@ -293,12 +293,17 @@ public class TelegramUpdateRouter {
     }
 
     private void vincularYResponder(long chatId, long telegramUserId, String codigo) {
+        if (!rateLimiter.allowLinkingAttempt(telegramUserId)) {
+            botClient.sendMessage(chatId, "Demasiados intentos fallidos de vinculación. Espera unos minutos.", null);
+            return;
+        }
         Optional<CuentaCanal> res = linkService.vincularPorCodigo(telegramUserId, codigo);
         if (res.isPresent()) {
             botClient.sendMessage(chatId,
                     "Cuenta vinculada correctamente a " + res.get().getUsuario().getName() + ". Usa /grupos para comenzar.",
                     null);
         } else {
+            rateLimiter.recordLinkingFailure(telegramUserId);
             botClient.sendMessage(chatId, "Código inválido, expirado o ya utilizado.", null);
         }
     }

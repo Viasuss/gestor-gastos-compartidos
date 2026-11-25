@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/partly.css}">
-    <title>Inicio · Partly</title>
-</head>
+<head th:replace="~{fragments/nexus-layout :: head('Inicio · NEXUS')}"></head>
 <body>
 
 <!-- TOAST FLOTANTE DE NOTIFICACIÓN EN LA ESQUINA SUPERIOR DERECHA -->
@@ -31,10 +22,10 @@
 <!-- BARRA DE NAVEGACIÓN SUPERIOR (TIPO COMPUTADOR) -->
 <header class="desktop-nav">
     <div class="nav-container">
-        <!-- Izquierda: Marca Partly con punto verde -->
+        <!-- Izquierda: Marca NEXUS -->
         <a th:href="@{/inicio}" class="nav-brand">
-            <span class="nav-dot" aria-hidden="true"></span>
-            <span>partly</span>
+            <img th:src="@{/img/nexus-isotipo.svg}" alt="NEXUS" width="24" height="24">
+            <span>NEXUS</span>
         </a>
 
         <!-- Derecha: Perfil de usuario + Invitaciones con punto rojo + Botón Cerrar Sesión -->
@@ -69,6 +60,8 @@
         </div>
     </div>
 </header>
+
+<div th:replace="~{fragments/nexus-layout :: topnav('inicio')}"></div>
 
 <!-- MODAL: PANEL DE CONTROL DE USUARIO & INTEGRACIÓN GOOGLE -->
 <div class="panel-modal-backdrop"
@@ -170,6 +163,33 @@
                       th:text="'$' + ${#numbers.formatDecimal(balanceGeneral.totalDebe, 1, 'POINT', 0, 'COMMA')}">$0</span>
             </div>
         </div>
+    </section>
+
+    <!-- INDICADORES OPERATIVOS REALES NEXUS -->
+    <section class="nexus-kpi-grid" aria-label="Indicadores operativos">
+        <a th:href="@{/asistente}" class="nexus-kpi-card" style="text-decoration: none;">
+            <span class="nexus-kpi-label">Borradores IA</span>
+            <span class="nexus-kpi-value" th:text="${borradoresPendientesCount != null ? borradoresPendientesCount : 0}">0</span>
+            <span class="nexus-kpi-sub">Pendientes por confirmar</span>
+        </a>
+        <div class="nexus-kpi-card">
+            <span class="nexus-kpi-label">Liquidaciones</span>
+            <span class="nexus-kpi-value" th:text="${liquidacionesPendientesCount != null ? liquidacionesPendientesCount : 0}">0</span>
+            <span class="nexus-kpi-sub">Pagos por confirmar</span>
+        </div>
+        <a th:href="@{/invitaciones}" class="nexus-kpi-card" style="text-decoration: none;">
+            <span class="nexus-kpi-label">Invitaciones</span>
+            <span class="nexus-kpi-value" th:text="${invitacionesPendientes != null ? invitacionesPendientes : 0}">0</span>
+            <span class="nexus-kpi-sub">Pendientes de respuesta</span>
+        </a>
+        <a th:href="@{/integraciones}" class="nexus-kpi-card" style="text-decoration: none;">
+            <span class="nexus-kpi-label">Canal Telegram</span>
+            <span class="nexus-kpi-value" style="font-size: 16px;">
+                <span class="nexus-badge nexus-badge-success" th:if="${telegramVinculado}">✓ Vinculado</span>
+                <span class="nexus-badge nexus-badge-neutral" th:unless="${telegramVinculado}">Sin vincular</span>
+            </span>
+            <span class="nexus-kpi-sub">Configurar integración</span>
+        </a>
     </section>
 
     <!-- ACCIONES RÁPIDAS -->

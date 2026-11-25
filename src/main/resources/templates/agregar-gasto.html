@@ -1,16 +1,8 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/partly.css}">
-    <title>Agregar gasto · Partly</title>
-</head>
+<head th:replace="~{fragments/nexus-layout :: head('Agregar gasto · NEXUS')}"></head>
 <body>
+<div th:replace="~{fragments/nexus-layout :: topnav('grupos')}"></div>
 
 <!-- ENCABEZADO -->
 <header class="subpage-header">

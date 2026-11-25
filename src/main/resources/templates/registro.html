@@ -1,31 +1,20 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/partly.css}">
-    <title>Crear cuenta · Partly</title>
-
-    <!-- Script Oficial de Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
+<head th:replace="~{fragments/nexus-layout :: head('Crear cuenta · NEXUS')}"></head>
 <body>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <div class="auth-wrapper">
     <main class="auth-card">
 
-        <!-- Logo e Isotipo oficial de Partly -->
+        <!-- Logo e Isotipo oficial de NEXUS -->
         <div class="auth-header">
             <div class="auth-logo-row">
-                <img class="auth-logo-img" th:src="@{/img/logo-icon.svg}" alt="Partly Logo">
-                <span class="auth-brand-name">partly</span>
+                <img class="auth-logo-img" th:src="@{/img/nexus-isotipo.svg}" alt="NEXUS Logo">
+                <span class="auth-brand-name">NEXUS</span>
             </div>
             <div>
                 <h1 class="auth-title">Crea tu cuenta</h1>
-                <p class="auth-subtitle">Empieza a controlar tus gastos compartidos entre amigos</p>
+                <p class="auth-subtitle">Conectamos personas. Simplificamos cuentas.</p>
             </div>
         </div>
 

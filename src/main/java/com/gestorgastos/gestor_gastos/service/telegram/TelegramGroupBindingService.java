@@ -15,7 +15,7 @@ import java.util.Optional;
 @Service
 public class TelegramGroupBindingService {
 
-    @Value("${nexus.telegram.groups-enabled:true}")
+    @Value("${nexus.telegram.groups-enabled:false}")
     private boolean groupsEnabled;
 
     private final VinculacionChatGrupoRepository vinculacionRepository;

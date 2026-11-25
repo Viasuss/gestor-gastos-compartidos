@@ -32,6 +32,9 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/img/**",
                                 "/js/**",
+                                "/manifest.webmanifest",
+                                "/sw.js",
+                                "/offline.html",
                                 "/favicon.ico",
                                 "/error"
                         ).permitAll()

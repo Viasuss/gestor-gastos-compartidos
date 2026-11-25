@@ -22,4 +22,4 @@
 | 13 | **F1.7** | Pruebas `@WebMvcTest`, integración completa y regresión en entorno aislado | `HA-008`, `HB-012` | Ambos (A + B) | F1.5.B, F1.6 |
 | 14 | **F1.8** | Auditoría independiente de cierre de Fase F1 | Todos (`HA-*`, `HB-*` de F1) | Ambos (A + B) | F1.7 |
 
-> **Backlog diferido (`F2`–`F15`):** Liquidaciones bilaterales, edición/eliminación de gastos, simplificación de deudas, API `/api/v1/`, Bandeja Inteligente, `ResourceManager`, IA/OCR/Voz, Automatizaciones y Analítica. Las capacidades de PWA, canales externos (Telegram/WhatsApp) y flujos colaborativos avanzados (`HB-013`) permanecen asignadas a `F10/F11` (y fases posteriores según roadmap).
+> **Estado acelerado (B0–B5):** Los bloques `B0` (infraestructura y pruebas aisladas), `B1` (seguridad y estabilización), `B2` (liquidaciones bilaterales), `B3` (integración colaborativa, `ResourceManager`, Groq Free y Bandeja Inteligente), `B4` (conectividad Telegram Bot API y TPM) y `B5` (identidad visual NEXUS, navegación unificada, métricas reales y PWA segura) han sido implementados en sus respectivas ramas de desarrollo. Ver `docs/08-informes-de-fase/B5_IDENTIDAD_EXPERIENCIA_PWA.md`.

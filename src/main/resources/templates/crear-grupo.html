@@ -1,16 +1,8 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/partly.css}">
-    <title>Crear grupo · Partly</title>
-</head>
+<head th:replace="~{fragments/nexus-layout :: head('Crear grupo · NEXUS')}"></head>
 <body>
+<div th:replace="~{fragments/nexus-layout :: topnav('grupos')}"></div>
 
 <!-- CONTENEDOR DE MINI VENTANAS FLOTANTES (TOASTS EN LA ESQUINA SUPERIOR DERECHA) -->
 <div class="toast-container" id="toastContainer">
@@ -30,7 +22,7 @@
                 Ya perteneces al grupo automáticamente como su creador.
             </p>
             <p class="toast-message" th:if="${param.error[0] == 'usuario'}">
-                Ese correo no pertenece a ningún usuario registrado en Partly.
+                Ese correo no pertenece a ningún usuario registrado en NEXUS.
             </p>
         </div>
         <button type="button" class="toast-close-btn" data-toast-close="serverErrorToast" title="Cerrar" aria-label="Cerrar notificación">✕</button>

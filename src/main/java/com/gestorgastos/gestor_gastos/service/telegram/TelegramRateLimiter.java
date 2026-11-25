@@ -19,6 +19,18 @@ public class TelegramRateLimiter {
 
     private final Deque<Instant> globalWindow = new ConcurrentLinkedDeque<>();
     private final Map<Long, Deque<Instant>> chatWindows = new ConcurrentHashMap<>();
+    private final Map<Long, Deque<Instant>> linkingFailures = new ConcurrentHashMap<>();
+
+    public boolean allowLinkingAttempt(long telegramUserId) {
+        Instant cutoff = Instant.now().minusSeconds(900);
+        Deque<Instant> failures = linkingFailures.computeIfAbsent(telegramUserId, k -> new ConcurrentLinkedDeque<>());
+        prune(failures, cutoff);
+        return failures.size() < 5;
+    }
+
+    public void recordLinkingFailure(long telegramUserId) {
+        linkingFailures.computeIfAbsent(telegramUserId, k -> new ConcurrentLinkedDeque<>()).addLast(Instant.now());
+    }
 
     public boolean allow(long chatId) {
         Instant now = Instant.now();

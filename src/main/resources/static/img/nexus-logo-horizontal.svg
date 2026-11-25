@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" fill="none">
+  <rect width="48" height="48" rx="12" fill="#050914"/>
+  <path d="M13 35V13L24 26L35 13V35" stroke="#10D99A" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 13L35 35" stroke="#35F5B1" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+  <text x="62" y="32" font-family="Manrope, Inter, sans-serif" font-weight="800" font-size="24" letter-spacing="1.5" fill="#050914">NEXUS</text>
+</svg>

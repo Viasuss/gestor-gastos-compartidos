@@ -1,0 +1,187 @@
+/* ==========================================================================
+   NEXUS Design System Tokens & Layout (Bloque B5)
+   ========================================================================== */
+:root {
+    --nexus-midnight: #050914;
+    --nexus-emerald: #10D99A;
+    --nexus-mint: #35F5B1;
+    --nexus-forest: #087A59;
+    --nexus-cloud: #F4F7F6;
+    --nexus-white: #FFFFFF;
+    --nexus-slate: #64748B;
+    --nexus-danger: #B93829;
+    --nexus-warning: #B45309;
+    --nexus-border: #E2E8F0;
+    --nexus-surface: #FFFFFF;
+    --nexus-text: #050914;
+    --nexus-text-muted: #475569;
+    --nexus-radius: 16px;
+    --nexus-shadow: 0 4px 20px rgba(5, 9, 20, 0.06);
+    --nexus-font-heading: 'Manrope', 'Inter', system-ui, sans-serif;
+    --nexus-font-body: 'Inter', system-ui, sans-serif;
+}
+
+body {
+    background-color: var(--nexus-cloud);
+    color: var(--nexus-text);
+    font-family: var(--nexus-font-body);
+}
+
+h1, h2, h3, .top-bar-title, .brand-title {
+    font-family: var(--nexus-font-heading);
+}
+
+/* Navegacion unificada */
+.nexus-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--nexus-midnight);
+    color: var(--nexus-white);
+    padding: 12px 18px;
+    border-radius: var(--nexus-radius);
+    margin-bottom: 16px;
+}
+
+.nexus-brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--nexus-white);
+    text-decoration: none;
+    font-weight: 800;
+    font-family: var(--nexus-font-heading);
+    letter-spacing: 0.5px;
+}
+
+.nexus-nav-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nexus-nav-link {
+    color: #CBD5E1;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 10px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nexus-nav-link:hover,
+.nexus-nav-link[aria-current="page"] {
+    background-color: rgba(16, 217, 154, 0.16);
+    color: var(--nexus-mint);
+}
+
+.nexus-nav-link:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--nexus-forest);
+    outline-offset: 2px;
+}
+
+/* Badges de estado con contraste WCAG AA */
+.nexus-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.nexus-badge-ok {
+    background-color: #D1FAE5;
+    color: var(--nexus-forest);
+}
+
+.nexus-badge-warn {
+    background-color: #FEF3C7;
+    color: var(--nexus-warning);
+}
+
+.nexus-badge-danger {
+    background-color: #FEE2E2;
+    color: var(--nexus-danger);
+}
+
+.nexus-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.nexus-kpi-card {
+    background: var(--nexus-white);
+    border: 1px solid var(--nexus-border);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: var(--nexus-shadow);
+}
+
+.nexus-kpi-label {
+    font-size: 12px;
+    color: var(--nexus-text-muted);
+    font-weight: 600;
+}
+
+.nexus-kpi-value {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: var(--nexus-font-heading);
+    color: var(--nexus-midnight);
+}
+
+/* Barra movil inferior */
+.nexus-mobile-nav {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .nexus-nav-links {
+        display: none;
+    }
+
+    body {
+        padding-bottom: 72px;
+    }
+
+    .nexus-mobile-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--nexus-midnight);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 8px 4px;
+        z-index: 900;
+    }
+
+    .nexus-mobile-item {
+        color: #CBD5E1;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 4px;
+    }
+
+    .nexus-mobile-item[aria-current="page"] {
+        color: var(--nexus-mint);
+    }
+}

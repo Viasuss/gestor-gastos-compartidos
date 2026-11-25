@@ -1,16 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Integraciones — Conectar Telegram</title>
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/partly.css}">
-</head>
+<head th:replace="~{fragments/nexus-layout :: head('Integraciones · NEXUS')}"></head>
 <body>
+<div th:replace="~{fragments/nexus-layout :: topnav('integraciones')}"></div>
 <div class="app-container">
     <header class="top-bar">
         <a th:href="@{/inicio}" class="btn-back" aria-label="Volver al inicio">←</a>

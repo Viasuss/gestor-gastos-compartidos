@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050914">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title th:text="${pageTitle}">NEXUS</title>
+    <link rel="manifest" th:href="@{/manifest.webmanifest}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/nexus-isotipo.svg}">
+    <link rel="apple-touch-icon" th:href="@{/img/icon-192.png}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+    <link rel="stylesheet" th:href="@{/css/nexus.css}">
+    <script defer th:src="@{/js/pwa-register.js}"></script>
+</head>
+<body>
+<div th:fragment="topnav(activePage)">
+    <nav class="nexus-nav-bar" aria-label="Navegación principal NEXUS">
+        <a th:href="@{/inicio}" class="nexus-brand-link">
+            <img th:src="@{/img/nexus-isotipo.svg}" alt="NEXUS" width="28" height="28">
+            <span>NEXUS</span>
+        </a>
+        <div class="nexus-nav-links">
+            <a th:href="@{/inicio}" class="nexus-nav-link" th:attr="aria-current=${activePage == 'inicio' ? 'page' : null}">Resumen</a>
+            <a th:href="@{/mis-grupos}" class="nexus-nav-link" th:attr="aria-current=${activePage == 'grupos' ? 'page' : null}">Mis grupos</a>
+            <a th:href="@{/asistente}" class="nexus-nav-link" th:attr="aria-current=${activePage == 'asistente' ? 'page' : null}">Asistente</a>
+            <a th:href="@{/integraciones}" class="nexus-nav-link" th:attr="aria-current=${activePage == 'integraciones' ? 'page' : null}">Integraciones</a>
+            <a th:href="@{/invitaciones}" class="nexus-nav-link" th:attr="aria-current=${activePage == 'invitaciones' ? 'page' : null}">Invitaciones</a>
+        </div>
+    </nav>
+    <nav class="nexus-mobile-nav" aria-label="Navegación móvil NEXUS">
+        <a th:href="@{/inicio}" class="nexus-mobile-item" th:attr="aria-current=${activePage == 'inicio' ? 'page' : null}">
+            <span aria-hidden="true">🏠</span>
+            <span>Inicio</span>
+        </a>
+        <a th:href="@{/mis-grupos}" class="nexus-mobile-item" th:attr="aria-current=${activePage == 'grupos' ? 'page' : null}">
+            <span aria-hidden="true">👥</span>
+            <span>Grupos</span>
+        </a>
+        <a th:href="@{/asistente}" class="nexus-mobile-item" th:attr="aria-current=${activePage == 'asistente' ? 'page' : null}">
+            <span aria-hidden="true">✨</span>
+            <span>Asistente</span>
+        </a>
+        <a th:href="@{/integraciones}" class="nexus-mobile-item" th:attr="aria-current=${activePage == 'integraciones' ? 'page' : null}">
+            <span aria-hidden="true">🔗</span>
+            <span>Telegram</span>
+        </a>
+    </nav>
+</div>
+</body>
+</html>

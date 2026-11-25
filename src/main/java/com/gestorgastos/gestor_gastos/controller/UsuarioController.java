@@ -1,15 +1,20 @@
 package com.gestorgastos.gestor_gastos.controller;
 
+import com.gestorgastos.gestor_gastos.entity.EstadoBorrador;
+import com.gestorgastos.gestor_gastos.entity.EstadoLiquidacion;
 import com.gestorgastos.gestor_gastos.entity.EstadoMiembro;
 import com.gestorgastos.gestor_gastos.entity.Grupo;
 import com.gestorgastos.gestor_gastos.entity.MiembroGrupo;
 import com.gestorgastos.gestor_gastos.entity.Usuario;
+import com.gestorgastos.gestor_gastos.repository.BorradorOperacionRepository;
+import com.gestorgastos.gestor_gastos.repository.LiquidacionRepository;
 import com.gestorgastos.gestor_gastos.repository.MiembroGrupoRepository;
 import com.gestorgastos.gestor_gastos.repository.UsuarioRepository;
 import com.gestorgastos.gestor_gastos.security.LoginAttemptService;
 import com.gestorgastos.gestor_gastos.service.BalanceGeneral;
 import com.gestorgastos.gestor_gastos.service.DeudaService;
 import com.gestorgastos.gestor_gastos.service.GoogleAuthService;
+import com.gestorgastos.gestor_gastos.service.telegram.TelegramAccountLinkService;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -42,6 +47,9 @@ public class UsuarioController {
     private final DeudaService deudaService;
     private final GoogleAuthService googleAuthService;
     private final LoginAttemptService loginAttemptService;
+    private final BorradorOperacionRepository borradorOperacionRepository;
+    private final LiquidacionRepository liquidacionRepository;
+    private final TelegramAccountLinkService telegramAccountLinkService;
 
     public UsuarioController(
             UsuarioRepository usuarioRepository,
@@ -49,7 +57,10 @@ public class UsuarioController {
             MiembroGrupoRepository miembroGrupoRepository,
             DeudaService deudaService,
             GoogleAuthService googleAuthService,
-            LoginAttemptService loginAttemptService) {
+            LoginAttemptService loginAttemptService,
+            BorradorOperacionRepository borradorOperacionRepository,
+            LiquidacionRepository liquidacionRepository,
+            TelegramAccountLinkService telegramAccountLinkService) {
 
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
@@ -57,6 +68,9 @@ public class UsuarioController {
         this.deudaService = deudaService;
         this.googleAuthService = googleAuthService;
         this.loginAttemptService = loginAttemptService;
+        this.borradorOperacionRepository = borradorOperacionRepository;
+        this.liquidacionRepository = liquidacionRepository;
+        this.telegramAccountLinkService = telegramAccountLinkService;
     }
 
     @GetMapping("/")
@@ -293,12 +307,33 @@ public class UsuarioController {
                 EstadoMiembro.PENDIENTE
         ).size();
 
+        long borradoresPendientesCount = borradorOperacionRepository
+                .findByUsuarioIdOrderByFechaCreacionDesc(usuario.getId())
+                .stream()
+                .filter(b -> b.getEstado() == EstadoBorrador.PENDIENTE
+                        || b.getEstado() == EstadoBorrador.REQUIERE_ACLARACION)
+                .count();
+
+        int liquidacionesPendientesCount = 0;
+        for (Grupo grupo : grupos) {
+            liquidacionesPendientesCount += liquidacionRepository
+                    .findByGrupoIdAndEstado(grupo.getId(), EstadoLiquidacion.PENDIENTE)
+                    .size();
+        }
+
+        boolean telegramVinculado = telegramAccountLinkService
+                .obtenerCuentaActivaPorUsuario(usuario.getId())
+                .isPresent();
+
         session.setAttribute("invitacionesPendientes", invitacionesPendientes);
         model.addAttribute("gruposDestacados", gruposDestacados);
         model.addAttribute("balanceGeneral", balanceGeneral);
         model.addAttribute("balancePorGrupo", balancePorGrupo);
         model.addAttribute("miembrosPorGrupo", miembrosPorGrupo);
         model.addAttribute("invitacionesPendientes", invitacionesPendientes);
+        model.addAttribute("borradoresPendientesCount", borradoresPendientesCount);
+        model.addAttribute("liquidacionesPendientesCount", liquidacionesPendientesCount);
+        model.addAttribute("telegramVinculado", telegramVinculado);
         model.addAttribute("googleClientId", googleAuthService.getGoogleClientId());
         model.addAttribute("googleVinculado", usuario.getGoogleSub() != null);
 
