@@ -1,5 +1,7 @@
 package com.gestorgastos.gestor_gastos.service.ia;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.Optional;
 @Service
 public class InteligenciaFinancieraService {
 
+    private static final Logger log = LoggerFactory.getLogger(InteligenciaFinancieraService.class);
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Bogota");
 
     private final LocalRulesProvider localRulesProvider;
@@ -38,6 +41,7 @@ public class InteligenciaFinancieraService {
         Optional<InterpretacionGastoResponse> localOpt = localRulesProvider.interpretar(request);
 
         if (localOpt.isPresent() && !localOpt.get().requiereAclaracion()) {
+            log.info("IA_TELEMETRY event=LOCAL_RULES_RESOLVED provider=LOCAL_RULES");
             return localOpt.get();
         }
 
@@ -47,6 +51,9 @@ public class InteligenciaFinancieraService {
             if (groqOpt.isPresent()) {
                 return groqOpt.get();
             }
+            log.info("IA_TELEMETRY event=GROQ_FALLBACK reason=GROQ_EMPTY_OR_ERROR");
+        } else {
+            log.info("IA_TELEMETRY event=GROQ_FALLBACK reason=GROQ_UNAVAILABLE");
         }
 
         return localOpt.orElseGet(() -> new InterpretacionGastoResponse(
