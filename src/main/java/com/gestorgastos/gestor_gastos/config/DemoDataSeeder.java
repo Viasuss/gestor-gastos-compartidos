@@ -30,6 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Carga opcional e idempotente de datos sinteticos para demostracion (B6).
@@ -50,8 +53,13 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final LiquidacionService liquidacionService;
     private final PasswordEncoder passwordEncoder;
 
+    private static final List<String> AUTHORIZED_DEMO_SCHEMAS = List.of("nexus_demo", "nexus_demo_v2");
+
     @Value("${spring.datasource.url:}")
     private String datasourceUrl;
+
+    @Value("${nexus.demo.users-password:}")
+    private String demoUsersPassword;
 
     public DemoDataSeeder(
             UsuarioRepository usuarioRepository,
@@ -77,17 +85,19 @@ public class DemoDataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (datasourceUrl == null
-                || datasourceUrl.contains("gestor_gastos")
-                || (!datasourceUrl.contains("nexus_demo") && !datasourceUrl.contains(":mem:"))) {
-            throw new IllegalStateException("DemoDataSeeder bloqueado: solo puede ejecutarse sobre nexus_demo.");
+        if (!isAuthorizedDemoDatasource(datasourceUrl)) {
+            throw new IllegalStateException(
+                    "DemoDataSeeder bloqueado: el esquema no pertenece a la lista autorizada " + AUTHORIZED_DEMO_SCHEMAS);
         }
 
         if (usuarioRepository.findByEmailIgnoreCase("demo.a@nexus.local").isPresent()) {
             return;
         }
 
-        String demoPass = passwordEncoder.encode("NexusDemo2026!");
+        String rawPassword = (demoUsersPassword != null && !demoUsersPassword.isBlank())
+                ? demoUsersPassword
+                : UUID.randomUUID().toString();
+        String demoPass = passwordEncoder.encode(rawPassword);
         Usuario demoA = usuarioRepository.save(new Usuario("Usuario Demo A", "demo.a@nexus.local", demoPass));
         Usuario demoB = usuarioRepository.save(new Usuario("Usuario Demo B", "demo.b@nexus.local", demoPass));
         Usuario demoC = usuarioRepository.save(new Usuario("Usuario Demo C", "demo.c@nexus.local", demoPass));
@@ -158,5 +168,26 @@ public class DemoDataSeeder implements CommandLineRunner {
         b1.setFechaExpiracion(ahora.plusDays(7));
         b1.setIdempotencyKey("demo-seed-borrador-1");
         borradorOperacionRepository.save(b1);
+    }
+
+    private boolean isAuthorizedDemoDatasource(String url) {
+        if (url == null || url.isBlank()) {
+            return false;
+        }
+        String normalized = url.toLowerCase(Locale.ROOT);
+        if (normalized.startsWith("jdbc:h2:mem:")) {
+            return true;
+        }
+        if (!normalized.startsWith("jdbc:mysql://")) {
+            return false;
+        }
+        int slashIdx = normalized.indexOf('/', "jdbc:mysql://".length());
+        if (slashIdx < 0 || slashIdx + 1 >= normalized.length()) {
+            return false;
+        }
+        String afterSlash = normalized.substring(slashIdx + 1);
+        int queryIdx = afterSlash.indexOf('?');
+        String schema = (queryIdx >= 0) ? afterSlash.substring(0, queryIdx) : afterSlash;
+        return AUTHORIZED_DEMO_SCHEMAS.contains(schema);
     }
 }

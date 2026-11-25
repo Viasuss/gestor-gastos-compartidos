@@ -13,6 +13,7 @@ import com.gestorgastos.gestor_gastos.repository.MiembroGrupoRepository;
 import com.gestorgastos.gestor_gastos.security.GrupoAccessService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -42,7 +43,7 @@ public class LiquidacionService {
         this.deudaService = deudaService;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Liquidacion registrarSolicitud(
             Long grupoId,
             Usuario pagadorAutenticado,
@@ -117,7 +118,7 @@ public class LiquidacionService {
         }
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Liquidacion confirmar(Long liquidacionId, Usuario receptorAutenticado) {
         Liquidacion liq = liquidacionRepository.findById(liquidacionId)
                 .orElseThrow(() -> new IllegalArgumentException("Liquidación no encontrada."));
@@ -126,6 +127,10 @@ public class LiquidacionService {
             throw new SecurityException("Solo el receptor puede confirmar esta liquidación.");
         }
 
+        grupoRepository.findByIdForUpdate(liq.getGrupo().getId());
+        liq = liquidacionRepository.findById(liquidacionId)
+                .orElseThrow(() -> new IllegalArgumentException("Liquidación no encontrada."));
+
         if (liq.getEstado() == EstadoLiquidacion.CONFIRMADA) {
             return liq;
         }
@@ -133,8 +138,6 @@ public class LiquidacionService {
         if (liq.getEstado() != EstadoLiquidacion.PENDIENTE) {
             throw new IllegalStateException("Solo se pueden confirmar liquidaciones pendientes.");
         }
-
-        grupoRepository.findByIdForUpdate(liq.getGrupo().getId());
 
         BigDecimal deudaActual = obtenerDeudaConReceptor(liq.getGrupo(), liq.getPagador(), liq.getReceptor().getId());
         if (deudaActual.compareTo(liq.getMonto()) < 0) {
