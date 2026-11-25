@@ -193,11 +193,10 @@ class DeudaServiceCharacterizationTest {
     }
 
     @Test
-    @DisplayName("9. Caracterizacion de defecto HA-014: decimales en BD generan saldo acreedor perdido por HALF_UP independiente")
-    void caracterizaSaldoPerdidoConDecimalesEnBd() {
+    @DisplayName("9. Correccion HA-014: decimales en BD conservan invariante suma cero sin perder saldo")
+    void conservaInvarianteSumaCeroConDecimalesEnBd() {
         // Gasto = 21.00 entre Ana (11) y Beto (10).
-        // Pagos = 10.50 (Ana -> 11) y 10.50 (Beto -> 11): suma pagos = 22 != 21.
-        // Saldo de Ana = 0, Saldo de Beto = +1 (acreedor), pero deudores = [] -> ese +1 desaparece.
+        // Pagos = 10.50 (Ana) y 10.50 (Beto): el ajuste de redondeo conserva suma = 0.
         Gasto gasto = crearGasto(110L, "Decimales BD", new BigDecimal("21.00"));
         mockGasto(
                 gasto,
@@ -208,9 +207,9 @@ class DeudaServiceCharacterizationTest {
                 )
         );
 
-        // Documenta el comportamiento vigente (HA-014): Beto deberia tener +1 segun redondeo,
-        // pero al no existir deudor en el gasto su credito se pierde silenciosamente y resulta 0.
-        assertEquals(BigDecimal.ZERO, deudaService.calcularBalanceTotal(grupo, beto));
+        assertEquals(new BigDecimal("-1"), deudaService.calcularBalanceTotal(grupo, ana));
+        assertEquals(BigDecimal.ONE, deudaService.calcularBalanceTotal(grupo, beto));
+        verificarInvarianteSumaCero(List.of(ana, beto));
     }
 
     @Test

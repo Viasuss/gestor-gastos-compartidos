@@ -177,15 +177,35 @@
         const iconSymbol = tipo === 'success' ? '✓' : '✕';
         const iconClass = tipo === 'success' ? 'success' : 'error';
 
-        toast.innerHTML = `
-            <div class="toast-icon-circle ${iconClass}">${iconSymbol}</div>
-            <div class="toast-body">
-                <h4 class="toast-title">${titulo}</h4>
-                <p class="toast-message">${mensaje}</p>
-            </div>
-            <button type="button" class="toast-close-btn" onclick="cerrarToast('${toastId}')" title="Cerrar">✕</button>
-            <div class="toast-progress-bar ${iconClass}"></div>
-        `;
+        const iconEl = document.createElement('div');
+        iconEl.className = `toast-icon-circle ${iconClass}`;
+        iconEl.textContent = iconSymbol;
+
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'toast-body';
+        const titleEl = document.createElement('h4');
+        titleEl.className = 'toast-title';
+        titleEl.textContent = titulo;
+        const msgEl = document.createElement('p');
+        msgEl.className = 'toast-message';
+        msgEl.textContent = mensaje;
+        bodyEl.appendChild(titleEl);
+        bodyEl.appendChild(msgEl);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'toast-close-btn';
+        closeBtn.title = 'Cerrar';
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', () => cerrarToast(toastId));
+
+        const progressEl = document.createElement('div');
+        progressEl.className = `toast-progress-bar ${iconClass}`;
+
+        toast.appendChild(iconEl);
+        toast.appendChild(bodyEl);
+        toast.appendChild(closeBtn);
+        toast.appendChild(progressEl);
 
         container.appendChild(toast);
 

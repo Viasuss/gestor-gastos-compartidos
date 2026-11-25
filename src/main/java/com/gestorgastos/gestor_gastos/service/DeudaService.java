@@ -122,14 +122,27 @@ public class DeudaService {
 
             // A cada pagador le sumamos lo que puso (puede no ser
             // participante del gasto, aunque lo normal es que sí lo sea)
+            BigDecimal totalPagosRedondeados = BigDecimal.ZERO;
+            Long primerPagadorId = null;
             for (PagoGasto pago : pagos) {
                 Usuario u = pago.getUsuario();
                 personasDelGasto.put(u.getId(), u);
+                if (primerPagadorId == null) {
+                    primerPagadorId = u.getId();
+                }
 
                 BigDecimal montoPago =
                         pago.getMonto().setScale(0, RoundingMode.HALF_UP);
+                totalPagosRedondeados = totalPagosRedondeados.add(montoPago);
 
                 saldosDelGasto.merge(u.getId(), montoPago, BigDecimal::add);
+            }
+
+            // Garantia de invariante suma cero (HA-014): si el redondeo independiente
+            // de pagos historicos con decimales difiere de montoEntero, ajustamos el delta.
+            BigDecimal deltaRedondeo = montoEntero.subtract(totalPagosRedondeados);
+            if (deltaRedondeo.signum() != 0 && primerPagadorId != null) {
+                saldosDelGasto.merge(primerPagadorId, deltaRedondeo, BigDecimal::add);
             }
 
             // 3. Acreedores (saldo positivo) y deudores (saldo negativo).

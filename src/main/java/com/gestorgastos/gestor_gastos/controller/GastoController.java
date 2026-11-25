@@ -14,12 +14,16 @@ import com.gestorgastos.gestor_gastos.repository.GrupoRepository;
 import com.gestorgastos.gestor_gastos.repository.MiembroGrupoRepository;
 import com.gestorgastos.gestor_gastos.repository.PagoGastoRepository;
 
+import com.gestorgastos.gestor_gastos.service.MoneyParser;
+
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -104,6 +108,7 @@ public class GastoController {
 
         model.addAttribute("grupo", grupo);
         model.addAttribute("miembros", miembros);
+        model.addAttribute("idempotencyKey", java.util.UUID.randomUUID().toString());
 
         return "agregar-gasto";
     }
@@ -135,7 +140,7 @@ public class GastoController {
             @PathVariable Long id,
             @RequestParam(required = false) String descripcion,
             // El monto llega como texto estilo Nequi ("$50.000"): lo
-            // convertimos nosotros con convertirAMontoReal(...)
+            // convertimos nosotros con MoneyParser.parseCop(...)
             @RequestParam(required = false) String monto,
             @RequestParam(required = false) String fecha,
             // Dos listas PARALELAS: la posición 0 de pagadoresId corresponde
@@ -143,6 +148,8 @@ public class GastoController {
             @RequestParam(required = false) List<Long> pagadoresId,
             @RequestParam(required = false) List<String> montosPagados,
             @RequestParam(required = false) List<Long> participantes,
+            @RequestParam(required = false) String idempotencyKey,
+            RedirectAttributes redirectAttributes,
             HttpSession session) {
 
         Usuario usuario = (Usuario) session.getAttribute("usuario");
@@ -176,7 +183,15 @@ public class GastoController {
             return "redirect:/mis-grupos";
         }
 
+        String cleanKey = (idempotencyKey != null && !idempotencyKey.isBlank()) ? idempotencyKey.trim() : null;
+        if (cleanKey != null && gastoRepository.findByGrupoIdAndIdempotencyKey(id, cleanKey).isPresent()) {
+            return "redirect:/grupo/" + id;
+        }
+
         String errorBase = "redirect:/grupo/" + id + "/gasto/nuevo?error=";
+        redirectAttributes.addFlashAttribute("prevDescripcion", descripcion);
+        redirectAttributes.addFlashAttribute("prevMonto", monto);
+        redirectAttributes.addFlashAttribute("prevFecha", fecha);
 
         // ---- Descripción: obligatoria y de largo razonable ----
         String descripcionLimpia = descripcion == null ? "" : descripcion.trim();
@@ -186,7 +201,7 @@ public class GastoController {
         }
 
         // ---- Monto total: mayor que 0 y con un tope ----
-        BigDecimal montoTotal = convertirAMontoReal(monto);
+        BigDecimal montoTotal = MoneyParser.parseCop(monto).orElse(BigDecimal.ZERO);
 
         if (montoTotal.signum() <= 0 || montoTotal.compareTo(MONTO_MAXIMO) > 0) {
             return errorBase + "monto";
@@ -230,7 +245,7 @@ public class GastoController {
                 return errorBase + "pagos";
             }
 
-            BigDecimal montoPago = convertirAMontoReal(montosPagados.get(i));
+            BigDecimal montoPago = MoneyParser.parseCop(montosPagados.get(i)).orElse(BigDecimal.ZERO);
 
             // Un pagador marcado con el monto vacío o en 0 no tiene sentido
             if (montoPago.signum() <= 0) {
@@ -271,8 +286,14 @@ public class GastoController {
         gasto.setMonto(montoTotal);
         gasto.setFecha(fechaGasto);
         gasto.setGrupo(grupo);
+        gasto.setIdempotencyKey(cleanKey);
 
-        gastoRepository.save(gasto);
+        try {
+            gastoRepository.save(gasto);
+        } catch (DataIntegrityViolationException ex) {
+            // Proteccion ante condicion de carrera con la misma clave de idempotencia
+            return "redirect:/grupo/" + id;
+        }
 
         for (int i = 0; i < pagadoresId.size(); i++) {
 

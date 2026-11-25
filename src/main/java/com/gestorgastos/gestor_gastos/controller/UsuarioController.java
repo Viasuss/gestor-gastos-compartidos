@@ -6,10 +6,16 @@ import com.gestorgastos.gestor_gastos.entity.MiembroGrupo;
 import com.gestorgastos.gestor_gastos.entity.Usuario;
 import com.gestorgastos.gestor_gastos.repository.MiembroGrupoRepository;
 import com.gestorgastos.gestor_gastos.repository.UsuarioRepository;
+import com.gestorgastos.gestor_gastos.security.LoginAttemptService;
 import com.gestorgastos.gestor_gastos.service.BalanceGeneral;
 import com.gestorgastos.gestor_gastos.service.DeudaService;
 import com.gestorgastos.gestor_gastos.service.GoogleAuthService;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,19 +41,27 @@ public class UsuarioController {
     private final MiembroGrupoRepository miembroGrupoRepository;
     private final DeudaService deudaService;
     private final GoogleAuthService googleAuthService;
+    private final LoginAttemptService loginAttemptService;
 
     public UsuarioController(
             UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
             MiembroGrupoRepository miembroGrupoRepository,
             DeudaService deudaService,
-            GoogleAuthService googleAuthService) {
+            GoogleAuthService googleAuthService,
+            LoginAttemptService loginAttemptService) {
 
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.miembroGrupoRepository = miembroGrupoRepository;
         this.deudaService = deudaService;
         this.googleAuthService = googleAuthService;
+        this.loginAttemptService = loginAttemptService;
+    }
+
+    @GetMapping("/")
+    public String redirigirRaiz(HttpSession session) {
+        return session.getAttribute("usuario") != null ? "redirect:/inicio" : "redirect:/login";
     }
 
     @GetMapping("/registro")
@@ -64,7 +78,8 @@ public class UsuarioController {
 
         if (usuario.getName() == null || usuario.getName().isBlank() ||
                 usuario.getEmail() == null || usuario.getEmail().isBlank() ||
-                usuario.getPassword() == null || usuario.getPassword().isBlank()) {
+                usuario.getPassword() == null || usuario.getPassword().isBlank() ||
+                usuario.getPassword().length() < 8) {
             return "redirect:/registro?error=campos";
         }
 
@@ -76,6 +91,8 @@ public class UsuarioController {
         usuario.setName(usuario.getName().trim());
         usuario.setEmail(emailNormalizado);
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+        usuario.setAuthProvider("LOCAL");
+        usuario.setEmailVerified(false);
 
         usuarioRepository.save(usuario);
 
@@ -97,7 +114,11 @@ public class UsuarioController {
             HttpServletRequest request,
             HttpSession session) {
 
-        String emailNormalizado = email != null ? email.trim() : "";
+        String emailNormalizado = email != null ? email.trim().toLowerCase() : "";
+
+        if (loginAttemptService.isBlocked(emailNormalizado)) {
+            return "redirect:/login?error";
+        }
 
         return usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
                 .filter(usuario -> passwordEncoder.matches(
@@ -105,10 +126,14 @@ public class UsuarioController {
                         usuario.getPassword()
                 ))
                 .map(usuario -> {
+                    loginAttemptService.recordSuccess(emailNormalizado);
                     abrirSesion(request, session, usuario);
                     return "redirect:/inicio";
                 })
-                .orElse("redirect:/login?error");
+                .orElseGet(() -> {
+                    loginAttemptService.recordFailure(emailNormalizado);
+                    return "redirect:/login?error";
+                });
     }
 
     // NUEVO: lo que pasa al iniciar sesión (con correo y contraseña, o con
@@ -135,8 +160,21 @@ public class UsuarioController {
         usuarioEnSesion.setId(usuario.getId());
         usuarioEnSesion.setName(usuario.getName());
         usuarioEnSesion.setEmail(usuario.getEmail());
+        usuarioEnSesion.setGoogleSub(usuario.getGoogleSub());
+        usuarioEnSesion.setAuthProvider(usuario.getAuthProvider());
+        usuarioEnSesion.setEmailVerified(usuario.isEmailVerified());
 
         session.setAttribute("usuario", usuarioEnSesion);
+
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                usuarioEnSesion,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
         int pendientes = miembroGrupoRepository.findByUsuarioIdAndEstado(
                 usuario.getId(),
@@ -160,18 +198,30 @@ public class UsuarioController {
 
         return googleAuthService.verificarToken(credential)
                 .map(googleUser -> {
+                    String sub = googleUser.sub();
                     String email = googleUser.email();
                     String name = googleUser.name();
 
-                    // Buscar usuario existente o registrar uno nuevo automáticamente
-                    Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
-                            .orElseGet(() -> {
-                                Usuario nuevo = new Usuario();
-                                nuevo.setName(name);
-                                nuevo.setEmail(email);
-                                nuevo.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-                                return usuarioRepository.save(nuevo);
-                            });
+                    // 1. Buscar por identificador estable de Google (sub)
+                    Usuario usuario = usuarioRepository.findByGoogleSub(sub).orElse(null);
+
+                    if (usuario == null) {
+                        // 2. Mitigacion de Account Pre-hijacking (HA-002):
+                        // Nunca vincular automaticamente una cuenta LOCAL no verificada por simple coincidencia de correo.
+                        Usuario existentePorEmail = usuarioRepository.findByEmailIgnoreCase(email).orElse(null);
+                        if (existentePorEmail != null) {
+                            return "redirect:/login?error=google";
+                        }
+
+                        Usuario nuevo = new Usuario();
+                        nuevo.setName(name);
+                        nuevo.setEmail(email);
+                        nuevo.setGoogleSub(sub);
+                        nuevo.setAuthProvider("GOOGLE");
+                        nuevo.setEmailVerified(true);
+                        nuevo.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                        usuario = usuarioRepository.save(nuevo);
+                    }
 
                     abrirSesion(request, session, usuario);
 
@@ -250,6 +300,7 @@ public class UsuarioController {
         model.addAttribute("miembrosPorGrupo", miembrosPorGrupo);
         model.addAttribute("invitacionesPendientes", invitacionesPendientes);
         model.addAttribute("googleClientId", googleAuthService.getGoogleClientId());
+        model.addAttribute("googleVinculado", usuario.getGoogleSub() != null);
 
         return "inicio";
     }

@@ -21,6 +21,7 @@
 <main class="page-content">
 
     <form id="formGasto" th:action="@{/grupo/{id}/gasto(id=${grupo.id})}" method="post" style="display: flex; flex-direction: column; gap: 18px;">
+            <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
 
         <!-- PILL CON EL NOMBRE DEL GRUPO -->
         <div style="display: inline-flex; align-items: center; gap: 8px; border-radius: 20px; background-color: #E0F7E8; padding: 6px 14px; width: fit-content;">
@@ -297,20 +298,33 @@
     function actualizarMensajeSuma() {
         const total = obtenerNumero(inputTotal.value);
         let suma = 0;
+        let hayPagadorSeleccionado = false;
+        let hayPagadorSinMonto = false;
 
         inputsPagador.forEach(inp => {
             if (!inp.disabled) {
-                suma += obtenerNumero(inp.value);
+                hayPagadorSeleccionado = true;
+                const val = obtenerNumero(inp.value);
+                if (val <= 0) {
+                    hayPagadorSinMonto = true;
+                }
+                suma += val;
             }
         });
 
-        if (total === 0 && suma === 0) {
+        if (total === 0 && suma === 0 && !hayPagadorSeleccionado) {
             mensajeSuma.textContent = '';
             mensajeSuma.style.color = 'inherit';
             return;
         }
 
-        if (suma === total) {
+        if (hayPagadorSinMonto) {
+            mensajeSuma.textContent = 'Todos los pagadores seleccionados deben tener un monto mayor a $0.';
+            mensajeSuma.style.color = '#EC6354';
+            return;
+        }
+
+        if (suma === total && total > 0) {
             mensajeSuma.textContent = '✓ Los pagos coinciden exactamente con el monto total.';
             mensajeSuma.style.color = '#2D8B71';
         } else {
@@ -324,6 +338,36 @@
             }
         }
     }
+
+    document.getElementById('formGasto').addEventListener('submit', (e) => {
+        const total = obtenerNumero(inputTotal.value);
+        let suma = 0;
+        let pagadoresActivos = 0;
+        let pagadorSinMonto = false;
+
+        inputsPagador.forEach(inp => {
+            if (!inp.disabled) {
+                pagadoresActivos++;
+                const val = obtenerNumero(inp.value);
+                if (val <= 0) pagadorSinMonto = true;
+                suma += val;
+            }
+        });
+
+        const participantesMarcados = document.querySelectorAll('.real-checkbox-participante:checked').length;
+
+        if (total <= 0 || pagadoresActivos === 0 || pagadorSinMonto || suma !== total || participantesMarcados === 0) {
+            e.preventDefault();
+            actualizarMensajeSuma();
+            if (pagadoresActivos === 0) {
+                mensajeSuma.textContent = 'Selecciona al menos un pagador con monto válido.';
+                mensajeSuma.style.color = '#EC6354';
+            } else if (participantesMarcados === 0) {
+                mensajeSuma.textContent = 'Selecciona al menos un participante.';
+                mensajeSuma.style.color = '#EC6354';
+            }
+        }
+    });
 </script>
 
 </body>

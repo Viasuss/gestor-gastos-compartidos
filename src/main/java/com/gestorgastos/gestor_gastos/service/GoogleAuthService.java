@@ -3,6 +3,7 @@ package com.gestorgastos.gestor_gastos.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -26,11 +27,14 @@ public class GoogleAuthService {
     private final ObjectMapper objectMapper;
 
     public GoogleAuthService() {
-        this.restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3000);
+        factory.setReadTimeout(5000);
+        this.restTemplate = new RestTemplate(factory);
         this.objectMapper = new ObjectMapper();
     }
 
-    public record GoogleUserInfo(String email, String name, String picture) {}
+    public record GoogleUserInfo(String sub, String email, String name, String picture) {}
 
     /**
      * Valida el ID token con Google. Si CUALQUIER cosa falla, devuelve vacío
@@ -74,15 +78,17 @@ public class GoogleAuthService {
                 return Optional.empty();
             }
 
+            String sub = root.path("sub").asText(null);
             String email = root.path("email").asText(null);
             String name = root.path("name").asText(null);
             String picture = root.path("picture").asText(null);
 
-            if (email == null || email.isBlank()) {
+            if (sub == null || sub.isBlank() || email == null || email.isBlank()) {
                 return Optional.empty();
             }
 
             return Optional.of(new GoogleUserInfo(
+                    sub.trim(),
                     email.trim().toLowerCase(),
                     name != null && !name.isBlank() ? name.trim() : email.split("@")[0],
                     picture

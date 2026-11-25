@@ -20,6 +20,15 @@ public class Usuario {
 
     private String password;
 
+    @Column(name = "google_sub", unique = true)
+    private String googleSub;
+
+    @Column(name = "auth_provider", length = 30)
+    private String authProvider = "LOCAL";
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
 
     // Constructor vacío obligatorio para JPA
     public Usuario() {
@@ -71,5 +80,29 @@ public class Usuario {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getGoogleSub() {
+        return googleSub;
+    }
+
+    public void setGoogleSub(String googleSub) {
+        this.googleSub = googleSub;
+    }
+
+    public String getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }

@@ -6,7 +6,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-
+@Table(
+        name = "gasto",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_gasto_grupo_idempotency",
+                columnNames = {"grupo_id", "idempotency_key"}
+        )
+)
 public class Gasto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,8 +28,14 @@ public class Gasto {
     private Grupo grupo;
 
     private String descripcion;
+
+    @Column(precision = 19, scale = 2, nullable = false)
     private BigDecimal monto;
+
     private LocalDate fecha;
+
+    @Column(name = "idempotency_key", length = 64)
+    private String idempotencyKey;
 
     public Gasto() {
 
@@ -69,5 +81,13 @@ public class Gasto {
     }
     public void setGrupo(Grupo grupo) {
         this.grupo = grupo;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 }

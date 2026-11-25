@@ -3,6 +3,13 @@ package com.gestorgastos.gestor_gastos.entity;
 import jakarta.persistence.*;
 
 @Entity
+@Table(
+        name = "miembro_grupo",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_miembro_usuario_grupo",
+                columnNames = {"usuario_id", "grupo_id"}
+        )
+)
 public class MiembroGrupo {
 
     @Id

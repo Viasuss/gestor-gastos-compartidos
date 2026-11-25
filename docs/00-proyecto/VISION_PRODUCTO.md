@@ -1,6 +1,8 @@
-# Visión del Producto — Partly
+# Visión del Producto — NEXUS (anteriormente Partly)
 
-**Nombre provisional:** Partly (conservar hasta la fase final de identidad comercial; no realizar cambios de marca sin autorización).
+**Nombre comercial aprobado:** **NEXUS** *(sustitución visual completa programada para B5; no renombrar paquetes Java ni repositorio)*.  
+**Eslogan provisional:** *Conectamos personas. Simplificamos cuentas.*  
+**Concepto:** Asistente inteligente de finanzas compartidas (isotipo N entrelazado, paleta esmeralda y fondo oscuro).
 
 ---
 

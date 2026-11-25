@@ -138,7 +138,7 @@ public class MiembroGrupoController {
         }
 
         List<MiembroGrupo> miembros =
-                miembroGrupoRepository.findByGrupoId(id);
+                miembroGrupoRepository.findByGrupoIdAndEstado(id, EstadoMiembro.MIEMBRO);
 
         List<Gasto> gastos =
                 gastoRepository.findByGrupoOrderByFechaDesc(grupo);

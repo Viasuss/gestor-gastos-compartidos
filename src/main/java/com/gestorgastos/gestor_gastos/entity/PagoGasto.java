@@ -26,6 +26,7 @@ public class PagoGasto {
     @ManyToOne
     private Usuario usuario;
 
+    @Column(precision = 19, scale = 2, nullable = false)
     private BigDecimal monto;
 
     public PagoGasto() {
