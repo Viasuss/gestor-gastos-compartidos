@@ -18,10 +18,12 @@
     --accent: #36C782;
 
     --tile: #E0F7E8;
-    --positive: #36C782;
+    --positive: #1E6B55;
+    --positive-text: #1E6B55;
     --negative: #EC6354;
+    --negative-text: #B93829;
     --danger-bg: #FCE5DE;
-    --danger-text: #EC6354;
+    --danger-text: #B93829;
     --info-bg: #E6F2ED;
     --info-text: #0F4D3F;
 
@@ -64,6 +66,34 @@ button {
     font-family: inherit;
     border: none;
     cursor: pointer;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.btn-submit:focus-visible,
+.btn-quick-primary:focus-visible,
+.btn-add-person:focus-visible,
+.btn-invite-accept:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 2px #ffffff;
 }
 
 /* =========================================================
@@ -625,11 +655,11 @@ button {
 }
 
 .group-card-amount.pos {
-    color: var(--positive);
+    color: var(--positive-text);
 }
 
 .group-card-amount.neg {
-    color: var(--negative);
+    color: var(--negative-text);
 }
 
 .empty-state {
@@ -800,7 +830,7 @@ button {
     border: none;
     font-size: 15px;
     font-weight: 700;
-    color: var(--negative);
+    color: var(--negative-text);
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 6px;
@@ -1089,6 +1119,11 @@ button {
     border-color: var(--primary);
 }
 
+.payer-amount-box:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15, 77, 63, 0.15);
+}
+
 .payer-amount-input {
     flex: 1;
     min-width: 0;
@@ -1236,7 +1271,7 @@ button {
 
 .btn-invite-reject:hover {
     background-color: var(--surface-2);
-    color: var(--negative);
+    color: var(--negative-text);
 }
 
 /* Punto rojo de notificación para botones y cabeceras */
@@ -1328,8 +1363,8 @@ button {
 }
 
 .toast-icon-circle.error {
-    background-color: #FCE5DE;
-    color: #EC6354;
+    background-color: var(--danger-bg);
+    color: var(--danger-text);
 }
 
 .toast-body {
@@ -1406,6 +1441,10 @@ button {
 
 .user-badge-interactive {
     cursor: pointer;
+    border: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
     transition: transform 0.12s, background-color 0.15s, box-shadow 0.15s;
     user-select: none;
 }
@@ -1531,6 +1570,13 @@ button {
 
 .panel-close-btn:hover {
     background: rgba(255, 255, 255, 0.28);
+}
+
+.panel-close-btn:focus-visible,
+.hero-dark-card a:focus-visible,
+.hero-dark-card button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }
 
 .panel-body-section {

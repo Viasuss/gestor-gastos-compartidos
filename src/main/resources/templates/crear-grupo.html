@@ -16,8 +16,8 @@
 <div class="toast-container" id="toastContainer">
 
     <!-- Mini ventana flotante de Error por Servidor (si viene ?error=...) -->
-    <div th:if="${param.error != null}" class="toast-card" id="serverErrorToast">
-        <div class="toast-icon-circle error">✕</div>
+    <div th:if="${param.error != null}" class="toast-card" id="serverErrorToast" role="alert" aria-live="assertive">
+        <div class="toast-icon-circle error" aria-hidden="true">✕</div>
         <div class="toast-body">
             <h4 class="toast-title" th:if="${param.error[0] == 'nombre'}">Nombre requerido</h4>
             <h4 class="toast-title" th:if="${param.error[0] == 'propio'}">No puedes agregarte a ti mismo</h4>
@@ -33,19 +33,19 @@
                 Ese correo no pertenece a ningún usuario registrado en Partly.
             </p>
         </div>
-        <button type="button" class="toast-close-btn" onclick="cerrarToast('serverErrorToast')" title="Cerrar">✕</button>
-        <div class="toast-progress-bar error"></div>
+        <button type="button" class="toast-close-btn" data-toast-close="serverErrorToast" title="Cerrar" aria-label="Cerrar notificación">✕</button>
+        <div class="toast-progress-bar error" aria-hidden="true"></div>
     </div>
 
     <!-- Mini ventana flotante de Éxito al agregar persona (si viene ?mensaje=...) -->
-    <div th:if="${mensaje}" class="toast-card" id="serverSuccessToast">
-        <div class="toast-icon-circle success">✓</div>
+    <div th:if="${mensaje}" class="toast-card" id="serverSuccessToast" role="status" aria-live="polite">
+        <div class="toast-icon-circle success" aria-hidden="true">✓</div>
         <div class="toast-body">
             <h4 class="toast-title">Persona agregada</h4>
             <p class="toast-message" th:text="${mensaje}">La persona fue agregada a la lista correctamente.</p>
         </div>
-        <button type="button" class="toast-close-btn" onclick="cerrarToast('serverSuccessToast')" title="Cerrar">✕</button>
-        <div class="toast-progress-bar success"></div>
+        <button type="button" class="toast-close-btn" data-toast-close="serverSuccessToast" title="Cerrar" aria-label="Cerrar notificación">✕</button>
+        <div class="toast-progress-bar success" aria-hidden="true"></div>
     </div>
 
 </div>
@@ -66,6 +66,7 @@
         </p>
 
         <form th:action="@{/grupo/agregar-usuario}" method="post" class="add-person-row" id="formAgregarPersona">
+            <label for="email" class="sr-only">Correo electrónico de la persona</label>
             <input
                 type="email"
                 id="email"
@@ -94,6 +95,7 @@
             <!-- Con entidad Usuario completa -->
             <div th:each="p : ${personasAgregadas}" class="added-person-card">
                 <div class="added-person-avatar"
+                     aria-hidden="true"
                      th:text="${#strings.toUpperCase(#strings.substring(p.name, 0, 1))}">U</div>
                 <div class="added-person-info">
                     <span class="added-person-name" th:text="${p.name}">Nombre Usuario</span>
@@ -101,19 +103,19 @@
                 </div>
                 <form th:action="@{/grupo/quitar-usuario}" method="post" style="margin: 0;">
                     <input type="hidden" name="email" th:value="${p.email}">
-                    <button type="submit" class="btn-remove-person" th:title="'Quitar ' + ${p.name}">✕</button>
+                    <button type="submit" class="btn-remove-person" th:title="'Quitar ' + ${p.name}" th:aria-label="'Quitar a ' + ${p.name}">✕</button>
                 </form>
             </div>
 
             <!-- Fallback para correos pendientes -->
             <div th:if="${#lists.isEmpty(personasAgregadas)}" th:each="email : ${usuariosTemporales}" class="added-person-card">
-                <div class="added-person-avatar">@</div>
+                <div class="added-person-avatar" aria-hidden="true">@</div>
                 <div class="added-person-info">
                     <span class="added-person-name" th:text="${email}">correo@ejemplo.com</span>
                 </div>
                 <form th:action="@{/grupo/quitar-usuario}" method="post" style="margin: 0;">
                     <input type="hidden" name="email" th:value="${email}">
-                    <button type="submit" class="btn-remove-person" title="Quitar">✕</button>
+                    <button type="submit" class="btn-remove-person" title="Quitar" th:aria-label="'Quitar a ' + ${email}">✕</button>
                 </form>
             </div>
         </div>
@@ -122,6 +124,7 @@
     <!-- SECCIÓN: NOMBRE DEL GRUPO Y BOTÓN CREAR -->
     <form th:action="@{/grupo/crear}" method="post" class="section-block" id="formCrearGrupo">
         <h2 class="section-block-title">Nombre del grupo</h2>
+        <label for="groupNameInput" class="sr-only">Nombre del grupo</label>
         <input
             type="text"
             id="groupNameInput"
@@ -153,6 +156,12 @@
         }
     }
 
+    document.querySelectorAll('[data-toast-close]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            cerrarToast(btn.getAttribute('data-toast-close'));
+        });
+    });
+
     // Auto-cierre de toasts del servidor tras 4.2 segundos
     document.querySelectorAll('.toast-card').forEach(toast => {
         setTimeout(() => {
@@ -164,48 +173,62 @@
     });
 
     // ==========================================
-    // FUNCIÓN PARA CREAR TOAST FLOTANTE DINÁMICO
+    // FUNCIÓN PARA CREAR TOAST FLOTANTE DINÁMICO (SEGURA CONTRA XSS DOM)
     // ==========================================
+    const TIPOS_TOAST_PERMITIDOS = Object.freeze({
+        success: '✓',
+        error: '✕'
+    });
+
     function mostrarToastDinamico(tipo, titulo, mensaje) {
         const container = document.getElementById('toastContainer');
-        const toastId = 'toast-' + Date.now();
+        if (!container) return;
+
+        const tipoSeguro = Object.prototype.hasOwnProperty.call(TIPOS_TOAST_PERMITIDOS, tipo) ? tipo : 'error';
+        const iconSymbol = TIPOS_TOAST_PERMITIDOS[tipoSeguro];
+        const toastId = 'toast-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
         const toast = document.createElement('div');
         toast.className = 'toast-card';
         toast.id = toastId;
+        toast.setAttribute('role', tipoSeguro === 'error' ? 'alert' : 'status');
+        toast.setAttribute('aria-live', tipoSeguro === 'error' ? 'assertive' : 'polite');
 
-        const iconSymbol = tipo === 'success' ? '✓' : '✕';
-        const iconClass = tipo === 'success' ? 'success' : 'error';
+        const iconCircle = document.createElement('div');
+        iconCircle.className = 'toast-icon-circle ' + tipoSeguro;
+        iconCircle.setAttribute('aria-hidden', 'true');
+        iconCircle.textContent = iconSymbol;
 
-        const iconEl = document.createElement('div');
-        iconEl.className = `toast-icon-circle ${iconClass}`;
-        iconEl.textContent = iconSymbol;
+        const body = document.createElement('div');
+        body.className = 'toast-body';
 
-        const bodyEl = document.createElement('div');
-        bodyEl.className = 'toast-body';
         const titleEl = document.createElement('h4');
         titleEl.className = 'toast-title';
-        titleEl.textContent = titulo;
-        const msgEl = document.createElement('p');
-        msgEl.className = 'toast-message';
-        msgEl.textContent = mensaje;
-        bodyEl.appendChild(titleEl);
-        bodyEl.appendChild(msgEl);
+        titleEl.textContent = titulo == null ? '' : String(titulo);
+
+        const messageEl = document.createElement('p');
+        messageEl.className = 'toast-message';
+        messageEl.textContent = mensaje == null ? '' : String(mensaje);
+
+        body.appendChild(titleEl);
+        body.appendChild(messageEl);
 
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.className = 'toast-close-btn';
         closeBtn.title = 'Cerrar';
+        closeBtn.setAttribute('aria-label', 'Cerrar notificación');
         closeBtn.textContent = '✕';
         closeBtn.addEventListener('click', () => cerrarToast(toastId));
 
-        const progressEl = document.createElement('div');
-        progressEl.className = `toast-progress-bar ${iconClass}`;
+        const progressBar = document.createElement('div');
+        progressBar.className = 'toast-progress-bar ' + tipoSeguro;
+        progressBar.setAttribute('aria-hidden', 'true');
 
-        toast.appendChild(iconEl);
-        toast.appendChild(bodyEl);
+        toast.appendChild(iconCircle);
+        toast.appendChild(body);
         toast.appendChild(closeBtn);
-        toast.appendChild(progressEl);
+        toast.appendChild(progressBar);
 
         container.appendChild(toast);
 

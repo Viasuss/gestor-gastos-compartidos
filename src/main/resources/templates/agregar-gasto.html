@@ -32,28 +32,28 @@
         </div>
 
         <!-- MENSAJES DE ERROR DEL SERVIDOR -->
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'suma'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'suma'}">
             La suma de lo que pagó cada persona no coincide con el monto total del gasto.
         </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'pagos'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'pagos'}">
             Revisa los pagadores: cada uno debe ser miembro del grupo y no puede repetirse.
         </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'pagadores'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'pagadores'}">
             Marca al menos a una persona que pagó.
         </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'pagomonto'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'pagomonto'}">
             Cada pagador marcado debe tener un monto mayor a $0.
         </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'participantes'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'participantes'}">
             Elige al menos a una persona para dividir el gasto (todas deben ser miembros del grupo).
         </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'monto'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'monto'}">
             Escribe un monto total mayor a $0.
         </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'descripcion'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'descripcion'}">
             Escribe una descripción (máximo 100 caracteres).
         </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'fecha'}">
+        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'fecha'}">
             La fecha del gasto no es válida.
         </div>
 
@@ -116,10 +116,10 @@
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
                 <div th:each="miembro : ${miembros}" class="payer-row" th:id="'payer-row-' + ${miembro.usuario.id}">
                     <!-- Botón/Label toggle de pagador -->
-                    <button type="button" class="payer-toggle-btn" th:data-id="${miembro.usuario.id}">
+                    <button type="button" class="payer-toggle-btn" role="checkbox" aria-checked="false" th:data-id="${miembro.usuario.id}">
                         <!-- Checkbox custom -->
-                        <span class="custom-checkbox" th:id="'checkbox-pagador-box-' + ${miembro.usuario.id}">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <span class="custom-checkbox" aria-hidden="true" th:id="'checkbox-pagador-box-' + ${miembro.usuario.id}">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                                 <path d="M2.5 6.2 5 8.5l4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </span>
@@ -138,7 +138,7 @@
 
                     <!-- Input individual de monto -->
                     <div class="payer-amount-box" th:id="'amount-box-' + ${miembro.usuario.id}">
-                        <span>$</span>
+                        <span aria-hidden="true">$</span>
                         <input
                             type="text"
                             name="montosPagados"
@@ -146,13 +146,14 @@
                             placeholder="0"
                             inputmode="numeric"
                             disabled
+                            th:aria-label="'Monto pagado por ' + ${miembro.usuario.name}"
                             th:id="'monto-pagador-' + ${miembro.usuario.id}">
                     </div>
                 </div>
             </div>
 
             <!-- Ayuda en vivo de validación de sumas -->
-            <p id="mensajeSumaPagos" style="font-size: 12px; font-weight: 600; margin: 4px 0 0; min-height: 18px;"></p>
+            <p id="mensajeSumaPagos" aria-live="polite" style="font-size: 12px; font-weight: 600; margin: 4px 0 0; min-height: 18px;"></p>
         </section>
 
         <!-- SECCIÓN: DIVIDIR ENTRE -->
@@ -164,10 +165,10 @@
 
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
                 <div th:each="miembro : ${miembros}">
-                    <button type="button" class="participant-row" th:data-id="${miembro.usuario.id}">
+                    <button type="button" class="participant-row" role="checkbox" aria-checked="true" th:data-id="${miembro.usuario.id}">
                         <!-- Checkbox custom -->
-                        <span class="custom-checkbox checked" th:id="'checkbox-part-box-' + ${miembro.usuario.id}">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <span class="custom-checkbox checked" aria-hidden="true" th:id="'checkbox-part-box-' + ${miembro.usuario.id}">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                                 <path d="M2.5 6.2 5 8.5l4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </span>
@@ -209,37 +210,52 @@
     // ==========================================
     const payerButtons = document.querySelectorAll('.payer-toggle-btn');
 
+    function sincronizarPagadorUI(btn) {
+        const userId = btn.getAttribute('data-id');
+        const realCheck = document.getElementById('real-pagador-' + userId);
+        const box = document.getElementById('checkbox-pagador-box-' + userId);
+        const row = document.getElementById('payer-row-' + userId);
+        const amountBox = document.getElementById('amount-box-' + userId);
+        const amountInput = document.getElementById('monto-pagador-' + userId);
+        if (!realCheck || !box || !row || !amountBox || !amountInput) return;
+
+        const activo = Boolean(realCheck.checked);
+        btn.setAttribute('aria-checked', String(activo));
+        box.classList.toggle('checked', activo);
+        row.classList.toggle('active', activo);
+        amountBox.classList.toggle('active', activo);
+        amountInput.disabled = !activo;
+        if (!activo) {
+            amountInput.value = '';
+        }
+    }
+
     payerButtons.forEach(btn => {
+        sincronizarPagadorUI(btn);
+
         btn.addEventListener('click', () => {
             const userId = btn.getAttribute('data-id');
             const realCheck = document.getElementById('real-pagador-' + userId);
-            const box = document.getElementById('checkbox-pagador-box-' + userId);
-            const row = document.getElementById('payer-row-' + userId);
-            const amountBox = document.getElementById('amount-box-' + userId);
             const amountInput = document.getElementById('monto-pagador-' + userId);
+            if (!realCheck) return;
 
             realCheck.checked = !realCheck.checked;
+            sincronizarPagadorUI(btn);
 
             if (realCheck.checked) {
-                box.classList.add('checked');
-                row.classList.add('active');
-                amountBox.classList.add('active');
-                amountInput.disabled = false;
-                amountInput.focus();
+                if (amountInput) {
+                    amountInput.focus();
+                }
 
                 // Marcar automáticamente en "Dividir entre"
                 const partCheck = document.getElementById('real-part-' + userId);
                 const partBox = document.getElementById('checkbox-part-box-' + userId);
+                const partBtn = document.querySelector('.participant-row[data-id="' + userId + '"]');
                 if (partCheck && !partCheck.checked) {
                     partCheck.checked = true;
-                    partBox.classList.add('checked');
+                    if (partBox) partBox.classList.add('checked');
+                    if (partBtn) partBtn.setAttribute('aria-checked', 'true');
                 }
-            } else {
-                box.classList.remove('checked');
-                row.classList.remove('active');
-                amountBox.classList.remove('active');
-                amountInput.disabled = true;
-                amountInput.value = '';
             }
 
             actualizarMensajeSuma();
@@ -251,19 +267,27 @@
     // ==========================================
     const partButtons = document.querySelectorAll('.participant-row');
 
+    function sincronizarParticipanteUI(btn) {
+        const userId = btn.getAttribute('data-id');
+        const realCheck = document.getElementById('real-part-' + userId);
+        const box = document.getElementById('checkbox-part-box-' + userId);
+        if (!realCheck || !box) return;
+
+        const activo = Boolean(realCheck.checked);
+        btn.setAttribute('aria-checked', String(activo));
+        box.classList.toggle('checked', activo);
+    }
+
     partButtons.forEach(btn => {
+        sincronizarParticipanteUI(btn);
+
         btn.addEventListener('click', () => {
             const userId = btn.getAttribute('data-id');
             const realCheck = document.getElementById('real-part-' + userId);
-            const box = document.getElementById('checkbox-part-box-' + userId);
+            if (!realCheck) return;
 
             realCheck.checked = !realCheck.checked;
-
-            if (realCheck.checked) {
-                box.classList.add('checked');
-            } else {
-                box.classList.remove('checked');
-            }
+            sincronizarParticipanteUI(btn);
         });
     });
 
@@ -326,15 +350,15 @@
 
         if (suma === total && total > 0) {
             mensajeSuma.textContent = '✓ Los pagos coinciden exactamente con el monto total.';
-            mensajeSuma.style.color = '#2D8B71';
+            mensajeSuma.style.color = '#1E6B55';
         } else {
             const dif = total - suma;
             if (dif > 0) {
                 mensajeSuma.textContent = 'Faltan $' + formatearPesos(dif) + ' por asignar entre los pagadores.';
-                mensajeSuma.style.color = '#EC6354';
+                mensajeSuma.style.color = '#B93829';
             } else {
                 mensajeSuma.textContent = 'Los pagos superan el monto total por $' + formatearPesos(Math.abs(dif)) + '.';
-                mensajeSuma.style.color = '#EC6354';
+                mensajeSuma.style.color = '#B93829';
             }
         }
     }
