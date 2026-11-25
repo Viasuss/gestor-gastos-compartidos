@@ -66,10 +66,18 @@
                 No tienes borradores registrados todavía.
             </div>
 
-            <div th:each="b : ${borradores}" class="expense-card" style="margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong th:text="${b.grupo.name + ' · ' + b.concepto}">Grupo · Concepto</strong>
-                    <span style="font-size: 12px; font-weight: 600;" th:text="${b.estado + ' (' + b.proveedorUtilizado + ')'}">ESTADO</span>
+            <div th:each="b : ${borradores}" class="expense-card" style="margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <strong style="font-size: 15px;" th:text="${b.grupo.name + ' · ' + b.concepto}">Grupo · Concepto</strong>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <span class="nexus-badge nexus-badge-neutral"
+                              th:text="${b.origen == 'TELEGRAM' ? 'Telegram' : 'Web'}">Web</span>
+                        <span class="nexus-badge"
+                              th:classappend="${b.estado.name() == 'CONFIRMADO' ? ' nexus-badge-success' : (b.estado.name() == 'REQUIERE_ACLARACION' ? ' nexus-badge-warning' : ' nexus-badge-neutral')}"
+                              th:text="${b.estado.name() == 'REQUIERE_ACLARACION' ? 'Requiere aclaración' : (b.estado.name() == 'PENDIENTE' ? 'Pendiente' : (b.estado.name() == 'CONFIRMADO' ? 'Confirmado' : (b.estado.name() == 'DESCARTADO' ? 'Descartado' : b.estado.name())))}">Estado</span>
+                        <span class="nexus-badge nexus-badge-neutral"
+                              th:text="${b.proveedorUtilizado == 'LOCAL_RULES' ? 'Interpretación local' : (b.proveedorUtilizado == 'GROQ' ? 'Interpretación con IA' : b.proveedorUtilizado)}">Motor</span>
+                    </div>
                 </div>
 
                 <p style="font-size: 12px; color: #5C6B66; margin: 0;" th:if="${b.mensajeOriginal}" th:text="${'Entrada: ' + b.mensajeOriginal}"></p>
@@ -78,7 +86,7 @@
                     <form th:action="@{/bandeja/{id}/confirmar(id=${b.id})}" method="post" style="display: flex; flex-direction: column; gap: 10px;">
                         <input type="hidden" name="confirmIdempotencyKey" th:value="${'confirm-' + b.id}">
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
                             <div>
                                 <label class="field-label">Concepto</label>
                                 <input type="text" name="concepto" class="input-field" th:value="${b.concepto}" maxlength="100" required>
@@ -86,12 +94,12 @@
                             <div>
                                 <label class="field-label">Monto (COP)</label>
                                 <input type="text" name="montoCop" class="input-field"
-                                       th:value="${b.montoCop != null ? b.montoCop.toPlainString() : ''}"
+                                       th:value="${b.montoCop != null ? #numbers.formatDecimal(b.montoCop, 1, 0) : ''}"
                                        placeholder="Ej: 120000" required>
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
                             <div>
                                 <label class="field-label">Fecha</label>
                                 <input type="date" name="fecha" class="input-field" th:value="${b.fechaSugerida}" required>
