@@ -69,6 +69,7 @@ public class ResourceManager {
     private final Map<Long, Deque<Instant>> userMinuteWindows = new ConcurrentHashMap<>();
     private final Map<String, Integer> consecutiveFailures = new ConcurrentHashMap<>();
     private final Map<String, Instant> circuitOpenUntil = new ConcurrentHashMap<>();
+    private final Object quotaLock = new Object();
     private volatile Semaphore concurrencySemaphore;
 
     public ResourceManager(ConsumoRecursoRepository consumoRecursoRepository) {
@@ -122,56 +123,58 @@ public class ResourceManager {
 
         boolean acquired = false;
         try {
-            Instant now = Instant.now();
-            Instant oneMinuteAgo = now.minusSeconds(60);
+            synchronized (quotaLock) {
+                Instant now = Instant.now();
+                Instant oneMinuteAgo = now.minusSeconds(60);
 
-            pruneOld(globalMinuteWindow, oneMinuteAgo);
-            if (globalMinuteWindow.size() >= globalRpmLimit) {
-                return false;
+                pruneOld(globalMinuteWindow, oneMinuteAgo);
+                if (globalMinuteWindow.size() >= globalRpmLimit) {
+                    return false;
+                }
+
+                pruneOldTokens(globalTokenMinuteWindow, oneMinuteAgo);
+                long tokensLastMinute = globalTokenMinuteWindow.stream().mapToLong(TokenWindowEntry::tokens).sum();
+                long effectiveTpm = (long) Math.floor(tpmLimit * (100.0 - reservePercent) / 100.0);
+                if ((tokensLastMinute + estimatedTokens) > effectiveTpm) {
+                    return false;
+                }
+
+                Deque<Instant> userWindow = userMinuteWindows.computeIfAbsent(userId, k -> new ConcurrentLinkedDeque<>());
+                pruneOld(userWindow, oneMinuteAgo);
+                if (userWindow.size() >= userRpmLimit) {
+                    return false;
+                }
+
+                LocalDate hoy = LocalDate.now();
+                var consumosHoy = consumoRecursoRepository.findByProveedorAndFecha(provider, hoy);
+                int globalRequestsToday = consumosHoy.stream().mapToInt(ConsumoRecurso::getSolicitudes).sum();
+                long globalTokensToday = consumosHoy.stream().mapToLong(ConsumoRecurso::getTokensEstimados).sum();
+
+                int effectiveGlobalRpd = (int) Math.floor(globalRpdLimit * (100.0 - reservePercent) / 100.0);
+                long effectiveTokenBudget = (long) Math.floor(dailyTokenBudget * (100.0 - reservePercent) / 100.0);
+
+                if (globalRequestsToday >= effectiveGlobalRpd || (globalTokensToday + estimatedTokens) > effectiveTokenBudget) {
+                    return false;
+                }
+
+                ConsumoRecurso userConsumo = consumoRecursoRepository
+                        .findByProveedorAndUsuarioIdAndFecha(provider, userId, hoy)
+                        .orElseGet(() -> new ConsumoRecurso(provider, userId, hoy));
+
+                if (userConsumo.getSolicitudes() >= userRpdLimit) {
+                    return false;
+                }
+
+                globalMinuteWindow.addLast(now);
+                globalTokenMinuteWindow.addLast(new TokenWindowEntry(now, estimatedTokens));
+                userWindow.addLast(now);
+                userConsumo.setSolicitudes(userConsumo.getSolicitudes() + 1);
+                userConsumo.setTokensEstimados(userConsumo.getTokensEstimados() + estimatedTokens);
+                consumoRecursoRepository.save(userConsumo);
+
+                acquired = true;
+                return true;
             }
-
-            pruneOldTokens(globalTokenMinuteWindow, oneMinuteAgo);
-            long tokensLastMinute = globalTokenMinuteWindow.stream().mapToLong(TokenWindowEntry::tokens).sum();
-            long effectiveTpm = (long) Math.floor(tpmLimit * (100.0 - reservePercent) / 100.0);
-            if ((tokensLastMinute + estimatedTokens) > effectiveTpm) {
-                return false;
-            }
-
-            Deque<Instant> userWindow = userMinuteWindows.computeIfAbsent(userId, k -> new ConcurrentLinkedDeque<>());
-            pruneOld(userWindow, oneMinuteAgo);
-            if (userWindow.size() >= userRpmLimit) {
-                return false;
-            }
-
-            LocalDate hoy = LocalDate.now();
-            var consumosHoy = consumoRecursoRepository.findByProveedorAndFecha(provider, hoy);
-            int globalRequestsToday = consumosHoy.stream().mapToInt(ConsumoRecurso::getSolicitudes).sum();
-            long globalTokensToday = consumosHoy.stream().mapToLong(ConsumoRecurso::getTokensEstimados).sum();
-
-            int effectiveGlobalRpd = (int) Math.floor(globalRpdLimit * (100.0 - reservePercent) / 100.0);
-            long effectiveTokenBudget = (long) Math.floor(dailyTokenBudget * (100.0 - reservePercent) / 100.0);
-
-            if (globalRequestsToday >= effectiveGlobalRpd || (globalTokensToday + estimatedTokens) > effectiveTokenBudget) {
-                return false;
-            }
-
-            ConsumoRecurso userConsumo = consumoRecursoRepository
-                    .findByProveedorAndUsuarioIdAndFecha(provider, userId, hoy)
-                    .orElseGet(() -> new ConsumoRecurso(provider, userId, hoy));
-
-            if (userConsumo.getSolicitudes() >= userRpdLimit) {
-                return false;
-            }
-
-            globalMinuteWindow.addLast(now);
-            globalTokenMinuteWindow.addLast(new TokenWindowEntry(now, estimatedTokens));
-            userWindow.addLast(now);
-            userConsumo.setSolicitudes(userConsumo.getSolicitudes() + 1);
-            userConsumo.setTokensEstimados(userConsumo.getTokensEstimados() + estimatedTokens);
-            consumoRecursoRepository.save(userConsumo);
-
-            acquired = true;
-            return true;
         } finally {
             if (!acquired) {
                 getSemaphore().release();

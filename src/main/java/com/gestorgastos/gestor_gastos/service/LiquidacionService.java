@@ -7,6 +7,7 @@ import com.gestorgastos.gestor_gastos.entity.Liquidacion;
 import com.gestorgastos.gestor_gastos.entity.MetodoPago;
 import com.gestorgastos.gestor_gastos.entity.MiembroGrupo;
 import com.gestorgastos.gestor_gastos.entity.Usuario;
+import com.gestorgastos.gestor_gastos.repository.GrupoRepository;
 import com.gestorgastos.gestor_gastos.repository.LiquidacionRepository;
 import com.gestorgastos.gestor_gastos.repository.MiembroGrupoRepository;
 import com.gestorgastos.gestor_gastos.security.GrupoAccessService;
@@ -24,16 +25,19 @@ public class LiquidacionService {
 
     private final LiquidacionRepository liquidacionRepository;
     private final MiembroGrupoRepository miembroGrupoRepository;
+    private final GrupoRepository grupoRepository;
     private final GrupoAccessService grupoAccessService;
     private final DeudaService deudaService;
 
     public LiquidacionService(
             LiquidacionRepository liquidacionRepository,
             MiembroGrupoRepository miembroGrupoRepository,
+            GrupoRepository grupoRepository,
             GrupoAccessService grupoAccessService,
             DeudaService deudaService) {
         this.liquidacionRepository = liquidacionRepository;
         this.miembroGrupoRepository = miembroGrupoRepository;
+        this.grupoRepository = grupoRepository;
         this.grupoAccessService = grupoAccessService;
         this.deudaService = deudaService;
     }
@@ -58,6 +62,7 @@ public class LiquidacionService {
 
         Grupo grupo = grupoAccessService.findGrupoSiEsMiembroActivo(grupoId, pagadorAutenticado)
                 .orElseThrow(() -> new IllegalArgumentException("No tienes acceso activo a este grupo."));
+        grupoRepository.findByIdForUpdate(grupo.getId());
 
         if (receptorId == null || receptorId.equals(pagadorAutenticado.getId())) {
             throw new IllegalArgumentException("El receptor debe ser otro miembro del grupo.");
@@ -128,6 +133,8 @@ public class LiquidacionService {
         if (liq.getEstado() != EstadoLiquidacion.PENDIENTE) {
             throw new IllegalStateException("Solo se pueden confirmar liquidaciones pendientes.");
         }
+
+        grupoRepository.findByIdForUpdate(liq.getGrupo().getId());
 
         BigDecimal deudaActual = obtenerDeudaConReceptor(liq.getGrupo(), liq.getPagador(), liq.getReceptor().getId());
         if (deudaActual.compareTo(liq.getMonto()) < 0) {

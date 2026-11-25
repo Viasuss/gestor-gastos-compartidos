@@ -1,7 +1,7 @@
 # Estado del Proyecto — NEXUS (anteriormente Partly)
 
-**Última actualización:** 2026-11-25 (Bloque `B5` — Identidad Visual NEXUS, Experiencia de Usuario, PWA y Preflight Operativo)  
-**Rama base:** `main` @ `761bc67` / Integración colaborativa `integracion/nexus-b2-colaborativa` @ `7a0b18d` / B4 publicado `feature/acelerado-b4-telegram` @ `bcf4483` / Desarrollo actual `feature/acelerado-b5-experiencia-pwa`  
+**Última actualización:** 2026-11-25 (Bloque `B6` — Validación Operativa, Estabilización Final y Preparación de Entrega Universitaria)  
+**Rama base:** `main` @ `761bc67` / `develop` @ `c776127` / `integracion/nexus-b2-colaborativa` @ `7a0b18d` / `feature/acelerado-b5-experiencia-pwa` @ `29ea0f7` / Desarrollo `feature/acelerado-b6-validacion-entrega` / Candidata `release/nexus-v1.0-rc1`  
 **Presupuesto:** `$0 COP`
 
 ---

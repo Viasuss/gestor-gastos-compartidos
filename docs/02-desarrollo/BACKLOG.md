@@ -22,4 +22,4 @@
 | 13 | **F1.7** | Pruebas `@WebMvcTest`, integración completa y regresión en entorno aislado | `HA-008`, `HB-012` | Ambos (A + B) | F1.5.B, F1.6 |
 | 14 | **F1.8** | Auditoría independiente de cierre de Fase F1 | Todos (`HA-*`, `HB-*` de F1) | Ambos (A + B) | F1.7 |
 
-> **Estado acelerado (B0–B5):** Los bloques `B0` (infraestructura y pruebas aisladas), `B1` (seguridad y estabilización), `B2` (liquidaciones bilaterales), `B3` (integración colaborativa, `ResourceManager`, Groq Free y Bandeja Inteligente), `B4` (conectividad Telegram Bot API y TPM) y `B5` (identidad visual NEXUS, navegación unificada, métricas reales y PWA segura) han sido implementados en sus respectivas ramas de desarrollo. Ver `docs/08-informes-de-fase/B5_IDENTIDAD_EXPERIENCIA_PWA.md`.
+> **Estado acelerado (B0–B6):** Los bloques `B0` a `B6` han sido completados hasta la versión candidata `release/nexus-v1.0-rc1` con 48 pruebas automatizadas aisladas aprobadas, documentación de entrega en `docs/09-entrega/`, perfil `demo` aislado y correcciones de concurrencia en `LiquidacionService` y `ResourceManager`. Ver `docs/08-informes-de-fase/B6_VALIDACION_FINAL_ENTREGA.md`.
