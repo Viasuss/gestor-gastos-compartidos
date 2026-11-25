@@ -1,6 +1,8 @@
 package com.gestorgastos.gestor_gastos.controller;
 
 import com.gestorgastos.gestor_gastos.entity.Gasto;
+import com.gestorgastos.gestor_gastos.entity.Liquidacion;
+import com.gestorgastos.gestor_gastos.repository.LiquidacionRepository;
 import com.gestorgastos.gestor_gastos.entity.PagoGasto;
 import com.gestorgastos.gestor_gastos.repository.GastoRepository;
 import com.gestorgastos.gestor_gastos.repository.PagoGastoRepository;
@@ -36,19 +38,22 @@ public class MiembroGrupoController {
     private final DeudaService deudaService;
     // NUEVO (Sprint 6, ampliación): para traer los pagadores de cada gasto
     private final PagoGastoRepository pagoGastoRepository;
+    private final LiquidacionRepository liquidacionRepository;
 
     public MiembroGrupoController(
             MiembroGrupoRepository miembroGrupoRepository,
             GrupoRepository grupoRepository,
             GastoRepository gastoRepository,
             DeudaService deudaService,
-            PagoGastoRepository pagoGastoRepository) {
+            PagoGastoRepository pagoGastoRepository,
+            LiquidacionRepository liquidacionRepository) {
 
         this.miembroGrupoRepository = miembroGrupoRepository;
         this.grupoRepository = grupoRepository;
         this.gastoRepository = gastoRepository;
         this.deudaService = deudaService;
         this.pagoGastoRepository = pagoGastoRepository;
+        this.liquidacionRepository = liquidacionRepository;
     }
 
     @GetMapping("/mis-grupos")
@@ -167,6 +172,8 @@ public class MiembroGrupoController {
         model.addAttribute("gastos", gastos);
         model.addAttribute("pagosPorGasto", pagosPorGasto);
         model.addAttribute("deudas", deudas);
+        model.addAttribute("liquidaciones", liquidacionRepository.findByGrupoIdOrderByFechaCreacionDesc(id));
+        model.addAttribute("usuarioActualId", usuario.getId());
         model.addAttribute("balanceTotal", balanceTotal);
 
         return "grupo";

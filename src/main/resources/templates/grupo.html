@@ -88,12 +88,62 @@
         </div>
     </div>
 
-    <!-- BOTÓN AGREGAR GASTO -->
-    <a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}"
-       class="btn-submit"
-       style="height: 50px; margin-top: 0;">
-        +&nbsp;&nbsp;Agregar gasto
-    </a>
+    <!-- BOTÓN AGREGAR GASTO Y REGISTRAR LIQUIDACIÓN -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}"
+           class="btn-submit"
+           style="height: 50px; margin-top: 0; flex: 1;">
+            +&nbsp;&nbsp;Agregar gasto
+        </a>
+        <a th:href="@{/grupo/{id}/liquidar(id=${grupo.id})}"
+           class="btn-quick btn-quick-secondary"
+           style="height: 50px; flex: 1; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+            Pagar / Liquidar
+        </a>
+    </div>
+
+    <!-- LIQUIDACIONES Y CONFIRMACIÓN BILATERAL -->
+    <section class="section-block" th:if="${!#lists.isEmpty(liquidaciones)}">
+        <h2 class="section-block-title" style="font-size: 16px;">Liquidaciones del grupo</h2>
+        <div th:if="${errorLiquidacion}" class="alert-error" style="margin-bottom: 10px;" th:text="${errorLiquidacion}"></div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div th:each="liq : ${liquidaciones}" class="expense-card" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600;"
+                          th:text="${liq.pagador.name + ' → ' + liq.receptor.name}">
+                        Pagador → Receptor
+                    </span>
+                    <strong th:text="${'$' + #numbers.formatInteger(liq.monto, 1, 'POINT')}">$0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #5C6B66;">
+                    <span th:text="${liq.estado + ' · ' + liq.metodoPago + (liq.estado.name() == 'CONFIRMADA' ? ' (Afecta saldo)' : ' (No afecta saldo)')}">
+                        ESTADO
+                    </span>
+                    <span th:text="${#temporals.format(liq.fechaCreacion, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                </div>
+                <div th:if="${liq.estado.name() == 'PENDIENTE'}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <form th:if="${liq.receptor.id == usuarioActualId}"
+                          th:action="@{/liquidacion/{id}/confirmar(id=${liq.id})}" method="post" style="margin: 0;">
+                        <button type="submit" class="btn-submit" style="height: 36px; padding: 0 14px; font-size: 13px;">
+                            Confirmar recepción
+                        </button>
+                    </form>
+                    <form th:if="${liq.receptor.id == usuarioActualId}"
+                          th:action="@{/liquidacion/{id}/rechazar(id=${liq.id})}" method="post" style="margin: 0;">
+                        <button type="submit" class="btn-quick btn-quick-secondary" style="height: 36px; padding: 0 14px; font-size: 13px;">
+                            Rechazar
+                        </button>
+                    </form>
+                    <form th:if="${liq.pagador.id == usuarioActualId}"
+                          th:action="@{/liquidacion/{id}/cancelar(id=${liq.id})}" method="post" style="margin: 0;">
+                        <button type="submit" class="btn-quick btn-quick-secondary" style="height: 36px; padding: 0 14px; font-size: 13px;">
+                            Cancelar solicitud
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- HISTORIAL DE GASTOS -->
     <section class="section-block">

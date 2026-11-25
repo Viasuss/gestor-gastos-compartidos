@@ -4,9 +4,12 @@ import com.gestorgastos.gestor_gastos.entity.EstadoMiembro;
 import com.gestorgastos.gestor_gastos.entity.Grupo;
 import com.gestorgastos.gestor_gastos.entity.MiembroGrupo;
 import com.gestorgastos.gestor_gastos.entity.Usuario;
+import com.gestorgastos.gestor_gastos.repository.GastoParticipanteRepository;
 import com.gestorgastos.gestor_gastos.repository.GastoRepository;
 import com.gestorgastos.gestor_gastos.repository.GrupoRepository;
+import com.gestorgastos.gestor_gastos.repository.LiquidacionRepository;
 import com.gestorgastos.gestor_gastos.repository.MiembroGrupoRepository;
+import com.gestorgastos.gestor_gastos.repository.PagoGastoRepository;
 import com.gestorgastos.gestor_gastos.repository.UsuarioRepository;
 import com.gestorgastos.gestor_gastos.support.ExternalProvidersTestConfig;
 import org.junit.jupiter.api.Test;
@@ -52,6 +55,15 @@ class MoneyParserAndIdempotencyTest {
     private GastoRepository gastoRepository;
 
     @Autowired
+    private PagoGastoRepository pagoGastoRepository;
+
+    @Autowired
+    private GastoParticipanteRepository gastoParticipanteRepository;
+
+    @Autowired
+    private LiquidacionRepository liquidacionRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Test
@@ -73,6 +85,9 @@ class MoneyParserAndIdempotencyTest {
 
     @Test
     void gastoControllerRechazaCaseBYGarantizaIdempotencia() throws Exception {
+        liquidacionRepository.deleteAll();
+        gastoParticipanteRepository.deleteAll();
+        pagoGastoRepository.deleteAll();
         gastoRepository.deleteAll();
         miembroGrupoRepository.deleteAll();
         grupoRepository.deleteAll();

@@ -7,6 +7,7 @@ import com.gestorgastos.gestor_gastos.entity.PagoGasto;
 import com.gestorgastos.gestor_gastos.entity.Usuario;
 import com.gestorgastos.gestor_gastos.repository.GastoParticipanteRepository;
 import com.gestorgastos.gestor_gastos.repository.GastoRepository;
+import com.gestorgastos.gestor_gastos.repository.LiquidacionRepository;
 import com.gestorgastos.gestor_gastos.repository.PagoGastoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +44,9 @@ class DeudaServiceCharacterizationTest {
 
     @Mock
     private PagoGastoRepository pagoGastoRepository;
+
+    @Mock
+    private LiquidacionRepository liquidacionRepository;
 
     @InjectMocks
     private DeudaService deudaService;

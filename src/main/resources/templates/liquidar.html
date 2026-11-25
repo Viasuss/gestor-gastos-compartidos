@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar liquidación — Partly</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-icon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/partly.css}">
+</head>
+<body>
+<div class="app-container">
+    <header class="top-bar">
+        <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="btn-back" aria-label="Volver al grupo">←</a>
+        <h1 class="top-bar-title">Registrar liquidación</h1>
+        <span style="width: 38px;"></span>
+    </header>
+
+    <main class="page-content">
+        <div th:if="${errorMensaje}" class="alert-error" style="margin-bottom: 16px;" th:text="${errorMensaje}">
+            Error al registrar liquidación
+        </div>
+
+        <div th:if="${#lists.isEmpty(deudasPorPagar)}" class="empty-state">
+            <p class="empty-state-title">No tienes deudas pendientes en este grupo</p>
+            <p class="empty-state-desc">Estás a paz y salvo con todos los integrantes.</p>
+            <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="btn-submit" style="margin-top: 16px; display: inline-flex; align-items: center; justify-content: center;">
+                Volver al grupo
+            </a>
+        </div>
+
+        <form th:if="${!#lists.isEmpty(deudasPorPagar)}"
+              th:action="@{/grupo/{id}/liquidar(id=${grupo.id})}"
+              method="post"
+              class="section-block"
+              style="display: flex; flex-direction: column; gap: 16px;">
+
+            <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
+
+            <div>
+                <label for="receptorId" class="field-label">¿A quién le pagaste?</label>
+                <select id="receptorId" name="receptorId" class="input-field" required>
+                    <option th:each="d : ${deudasPorPagar}"
+                            th:value="${d.otraPersona.id}"
+                            th:selected="${receptorPreseleccionado != null and receptorPreseleccionado == d.otraPersona.id}"
+                            th:text="${d.otraPersona.name + ' (Debes $' + #numbers.formatInteger(d.monto.abs(), 1, 'POINT') + ')'}">
+                        Persona
+                    </option>
+                </select>
+            </div>
+
+            <div>
+                <label for="monto" class="field-label">Monto pagado (COP)</label>
+                <input id="monto"
+                       type="text"
+                       name="monto"
+                       class="input-field"
+                       placeholder="Ej: 50.000"
+                       inputmode="numeric"
+                       th:value="${prevMonto}"
+                       required>
+            </div>
+
+            <div>
+                <label for="metodoPago" class="field-label">Método informativo</label>
+                <select id="metodoPago" name="metodoPago" class="input-field" required>
+                    <option th:each="m : ${metodosPago}"
+                            th:value="${m}"
+                            th:selected="${prevMetodo != null and prevMetodo == m}"
+                            th:text="${m}">
+                        NEQUI
+                    </option>
+                </select>
+            </div>
+
+            <div>
+                <label for="nota" class="field-label">Nota opcional</label>
+                <input id="nota"
+                       type="text"
+                       name="nota"
+                       class="input-field"
+                       maxlength="250"
+                       placeholder="Ej: Transferencia Nequi"
+                       th:value="${prevNota}">
+            </div>
+
+            <p class="section-block-desc" style="font-size: 12px;">
+                El balance se actualizará únicamente cuando el receptor confirme la recepción del pago.
+            </p>
+
+            <button type="submit" class="btn-submit" style="height: 50px;">
+                Enviar solicitud de liquidación
+            </button>
+        </form>
+    </main>
+</div>
+</body>
+</html>

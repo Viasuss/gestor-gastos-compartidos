@@ -1,13 +1,16 @@
 package com.gestorgastos.gestor_gastos.service;
 
+import com.gestorgastos.gestor_gastos.entity.EstadoLiquidacion;
 import com.gestorgastos.gestor_gastos.entity.Gasto;
 import com.gestorgastos.gestor_gastos.entity.GastoParticipante;
 import com.gestorgastos.gestor_gastos.entity.Grupo;
+import com.gestorgastos.gestor_gastos.entity.Liquidacion;
 import com.gestorgastos.gestor_gastos.entity.PagoGasto;
 import com.gestorgastos.gestor_gastos.entity.Usuario;
 
 import com.gestorgastos.gestor_gastos.repository.GastoParticipanteRepository;
 import com.gestorgastos.gestor_gastos.repository.GastoRepository;
+import com.gestorgastos.gestor_gastos.repository.LiquidacionRepository;
 import com.gestorgastos.gestor_gastos.repository.PagoGastoRepository;
 
 import org.springframework.stereotype.Service;
@@ -50,15 +53,18 @@ public class DeudaService {
     private final GastoRepository gastoRepository;
     private final GastoParticipanteRepository gastoParticipanteRepository;
     private final PagoGastoRepository pagoGastoRepository;
+    private final LiquidacionRepository liquidacionRepository;
 
     public DeudaService(
             GastoRepository gastoRepository,
             GastoParticipanteRepository gastoParticipanteRepository,
-            PagoGastoRepository pagoGastoRepository) {
+            PagoGastoRepository pagoGastoRepository,
+            LiquidacionRepository liquidacionRepository) {
 
         this.gastoRepository = gastoRepository;
         this.gastoParticipanteRepository = gastoParticipanteRepository;
         this.pagoGastoRepository = pagoGastoRepository;
+        this.liquidacionRepository = liquidacionRepository;
     }
 
     public List<DeudaConPersona> calcularDeudas(Grupo grupo, Usuario usuario) {
@@ -254,6 +260,19 @@ public class DeudaService {
                             pendientePorCobrar.get(idAcreedor).subtract(montoAsignado)
                     );
                 }
+            }
+        }
+
+        // Aplicar exclusivamente liquidaciones CONFIRMADAS del grupo (B2)
+        List<Liquidacion> liquidacionesConfirmadas =
+                liquidacionRepository.findByGrupoIdAndEstado(grupo.getId(), EstadoLiquidacion.CONFIRMADA);
+
+        for (Liquidacion liq : liquidacionesConfirmadas) {
+            BigDecimal montoLiq = liq.getMonto().setScale(0, RoundingMode.HALF_UP);
+            if (liq.getPagador().getId().equals(usuario.getId())) {
+                acumular(resumenPorPersona, liq.getReceptor(), montoLiq);
+            } else if (liq.getReceptor().getId().equals(usuario.getId())) {
+                acumular(resumenPorPersona, liq.getPagador(), montoLiq.negate());
             }
         }
 
