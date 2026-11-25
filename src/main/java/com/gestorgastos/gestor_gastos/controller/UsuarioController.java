@@ -327,6 +327,7 @@ public class UsuarioController {
 
         session.setAttribute("invitacionesPendientes", invitacionesPendientes);
         model.addAttribute("gruposDestacados", gruposDestacados);
+        model.addAttribute("totalGruposActivos", misGrupos.size());
         model.addAttribute("balanceGeneral", balanceGeneral);
         model.addAttribute("balancePorGrupo", balancePorGrupo);
         model.addAttribute("miembrosPorGrupo", miembrosPorGrupo);

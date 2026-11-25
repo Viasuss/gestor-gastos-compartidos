@@ -1,78 +1,63 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/nexus-layout :: head('Mis invitaciones · NEXUS')}"></head>
-<body>
-<div th:replace="~{fragments/nexus-layout :: topnav('invitaciones')}"></div>
 
-<!-- ENCABEZADO -->
-<header class="subpage-header">
-    <a th:href="@{/inicio}" class="btn-back" aria-label="Volver">←</a>
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <h1 class="subpage-title">Mis invitaciones</h1>
-        <span th:if="${not #lists.isEmpty(invitaciones)}"
-              style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--negative); display: inline-block;"
-              title="Tienes invitaciones pendientes"></span>
-    </div>
-</header>
+<head th:replace="~{fragments/nexus-layout :: nexusHead('Invitaciones — NEXUS')}"></head>
 
-<main class="page-content">
+<body th:replace="~{fragments/nexus-layout :: appBody('invitaciones', 'Invitaciones', null, null, ~{::#nexus-page-content})}">
+    <div id="nexus-page-content">
 
-    <!-- CONTADOR DE INVITACIONES PENDIENTES -->
-    <p class="section-block-desc" style="font-weight: 500;">
-        <span th:if="${#lists.isEmpty(invitaciones)}">
-            No tienes invitaciones pendientes
-        </span>
-        <span th:unless="${#lists.isEmpty(invitaciones)}"
-              th:text="${invitaciones.size()} + (${invitaciones.size() == 1} ? ' invitación pendiente' : ' invitaciones pendientes')">
-            1 invitación pendiente
-        </span>
-    </p>
+        <section class="nx-page-header">
+            <div>
+                <h1 class="nx-page-title">Invitaciones a grupos</h1>
+                <p class="nx-page-subtitle">
+                    Revisa tus solicitudes pendientes antes de integrarte al historial y balance de cada grupo.
+                </p>
+            </div>
+            <div class="nx-page-actions">
+                <a th:href="@{/mis-grupos}" class="nx-btn nx-btn-secondary">Ver mis grupos</a>
+            </div>
+        </section>
 
-    <!-- ESTADO VACÍO -->
-    <div class="empty-state" th:if="${#lists.isEmpty(invitaciones)}">
-        No tienes invitaciones pendientes por el momento. Cuando alguien te agregue a un grupo, aparecerá aquí.
-    </div>
-
-    <!-- LISTA DE INVITACIONES -->
-    <div style="display: flex; flex-direction: column; gap: 14px;" th:unless="${#lists.isEmpty(invitaciones)}">
-        <article th:each="invitacion : ${invitaciones}" class="invite-card-full">
-            <div class="invite-card-header">
-                <!-- Avatar verde con inicial del creador -->
-                <div class="invite-avatar-circle"
-                     th:text="${#strings.toUpperCase(#strings.substring(invitacion.grupo.creador.name, 0, 1))}">
-                    W
+        <section th:if="${invitaciones == null or #lists.isEmpty(invitaciones)}" class="nx-card">
+            <div class="nx-empty-state">
+                <div class="nx-empty-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                    </svg>
                 </div>
+                <h2 class="nx-empty-title">No tienes invitaciones pendientes</h2>
+                <p class="nx-empty-desc">
+                    Cuando otro usuario te agregue a un grupo usando tu correo electrónico, aparecerá aquí para que puedas aceptar o rechazar.
+                </p>
+                <a th:href="@{/inicio}" class="nx-btn nx-btn-primary">Volver al resumen</a>
+            </div>
+        </section>
 
-                <div class="invite-text-content">
-                    <p class="invite-main-text">
-                        <strong th:text="${invitacion.grupo.creador.name}">Wilmer</strong>
-                        te invitó a unirte al grupo
-                        <strong th:text="'&quot;' + ${invitacion.grupo.name} + '&quot;'">"Asado del sábado"</strong>
+        <section th:unless="${invitaciones == null or #lists.isEmpty(invitaciones)}" class="nx-group-grid-3">
+            <article th:each="inv : ${invitaciones}" class="nx-card nx-card-padded nx-stack-md">
+                <div>
+                    <span class="nx-badge nx-badge-amber">Invitación pendiente</span>
+                    <h2 class="nx-card-title" style="margin-top: 10px;" th:text="${inv.grupo.name}">Nombre del grupo</h2>
+                    <p class="nx-hint" style="margin: 6px 0 0;" th:if="${inv.grupo.creador != null}">
+                        Invitado por <strong th:text="${inv.grupo.creador.name}">Creador</strong>
                     </p>
-                    <span class="invite-timestamp">Invitación pendiente</span>
+                    <p class="nx-hint" style="margin: 4px 0 0;" th:if="${inv.grupo.fechaCreacion != null}">
+                        Creado el <span th:text="${#temporals.format(inv.grupo.fechaCreacion, 'dd/MM/yyyy')}">01/01/2026</span>
+                    </p>
                 </div>
-            </div>
 
-            <!-- Botones de Acción: Rechazar y Aceptar -->
-            <div class="invite-actions-row">
-                <!-- Rechazar -->
-                <form th:action="@{/invitacion/{id}/rechazar(id=${invitacion.id})}" method="post" style="margin: 0;">
-                    <button type="submit" class="btn-invite-action btn-invite-reject">
-                        Rechazar
-                    </button>
-                </form>
-
-                <!-- Aceptar -->
-                <form th:action="@{/invitacion/{id}/aceptar(id=${invitacion.id})}" method="post" style="margin: 0;">
-                    <button type="submit" class="btn-invite-action btn-invite-accept">
-                        Aceptar
-                    </button>
-                </form>
-            </div>
-        </article>
+                <div style="display:flex; gap:10px; padding-top:10px; border-top:1px solid var(--nx-border);">
+                    <form th:action="@{/invitacion/{id}/aceptar(id=${inv.id})}" method="post" style="flex:1;">
+                        <button type="submit" class="nx-btn nx-btn-primary nx-btn-block nx-btn-sm">Aceptar</button>
+                    </form>
+                    <form th:action="@{/invitacion/{id}/rechazar(id=${inv.id})}" method="post" style="flex:1;">
+                        <button type="submit" class="nx-btn nx-btn-danger nx-btn-block nx-btn-sm">Rechazar</button>
+                    </form>
+                </div>
+            </article>
+        </section>
     </div>
-
-</main>
-
 </body>
+
 </html>

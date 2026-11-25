@@ -1,133 +1,124 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/nexus-layout :: head('Iniciar sesión · NEXUS')}"></head>
+
+<head th:replace="~{fragments/nexus-layout :: nexusHead('Iniciar sesión — NEXUS')}"></head>
+
 <body>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<div class="auth-wrapper">
-    <main class="auth-card">
-
-        <!-- Logo e Isotipo oficial de NEXUS -->
-        <div class="auth-header">
-            <div class="auth-logo-row">
-                <img class="auth-logo-img" th:src="@{/img/nexus-isotipo.svg}" alt="NEXUS Logo">
-                <span class="auth-brand-name">NEXUS</span>
-            </div>
+    <main class="nx-auth-page">
+        <!-- Panel corporativo izquierdo (Desktop split-screen) -->
+        <section class="nx-auth-brand-pane" aria-label="Presentación de NEXUS">
             <div>
-                <h1 class="auth-title">Bienvenido de nuevo</h1>
-                <p class="auth-subtitle">Conectamos personas. Simplificamos cuentas.</p>
-            </div>
-        </div>
+                <a th:href="@{/login}" class="nx-brand-link" style="font-size: 1.35rem;">
+                    <img src="/img/nexus-isotipo.svg" alt="" width="34" height="34">
+                    <span>NEXUS</span>
+                </a>
+                <h1 class="nx-auth-hero-title">
+                    Control claro de gastos compartidos en pesos COP.
+                </h1>
+                <p class="nx-auth-hero-desc">
+                    Divide cuentas de viajes, vivienda o equipo con exactitud financiera, historial transparente y asistente con confirmación humana.
+                </p>
 
-        <!-- Mensajes de Estado -->
-        <div class="alert-message" th:if="${param.error != null and param.error[0] != 'google'}">
-            Correo o contraseña incorrectos. Intenta nuevamente.
-        </div>
-        <div class="alert-message" th:if="${param.error != null and param.error[0] == 'google'}">
-            No se pudo autenticar con Google. Por favor intenta de nuevo.
-        </div>
-        <div class="alert-message success" th:if="${param.registrado}">
-            ¡Cuenta creada exitosamente! Ya puedes iniciar sesión.
-        </div>
-
-        <!-- Formulario Tradicional -->
-        <form th:action="@{/login}" method="post">
-            <div class="form-group">
-                <label for="email" class="form-label">Correo electrónico</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    class="form-input"
-                    autocomplete="email"
-                    placeholder="tucorreo@ejemplo.com"
-                    required>
+                <ul class="nx-auth-features">
+                    <li>
+                        <span class="nx-auth-dot" aria-hidden="true"></span>
+                        <span>Cálculo exacto en COP sin aproximaciones flotantes</span>
+                    </li>
+                    <li>
+                        <span class="nx-auth-dot" aria-hidden="true"></span>
+                        <span>Borradores asistidos desde Web o Telegram bajo tu control</span>
+                    </li>
+                    <li>
+                        <span class="nx-auth-dot" aria-hidden="true"></span>
+                        <span>Liquidaciones verificadas entre miembros del grupo</span>
+                    </li>
+                </ul>
             </div>
 
-            <div class="form-group">
-                <label for="password" class="form-label">Contraseña</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    class="form-input"
-                    autocomplete="current-password"
-                    placeholder="••••••••"
-                    required>
+            <div class="nx-auth-footer-note nx-hint" style="color: #94A3B8;">
+                NEXUS &middot; Gestión financiera colaborativa
             </div>
+        </section>
 
-            <button type="submit" class="btn-submit">
-                Iniciar sesión
-            </button>
-        </form>
+        <!-- Panel formulario derecho -->
+        <section class="nx-auth-form-pane">
+            <div class="nx-auth-card">
+                <div style="margin-bottom: 22px;">
+                    <h2 class="nx-page-title" style="font-size: 1.4rem;">Iniciar sesión</h2>
+                    <p class="nx-page-subtitle">Accede a tu espacio financiero NEXUS.</p>
+                </div>
 
-        <div class="divider">
-            <div class="divider-line"></div>
-            <span class="divider-text">o continúa con</span>
-            <div class="divider-line"></div>
-        </div>
+                <div th:if="${param.error != null}" class="nx-alert nx-alert-error" role="alert">
+                    Correo o contraseña incorrectos, o cuenta temporalmente protegida. Verifica tus datos.
+                </div>
+                <div th:if="${param.registrado != null}" class="nx-alert nx-alert-success" role="status">
+                    Cuenta creada correctamente. Ya puedes iniciar sesión.
+                </div>
+                <div th:if="${param.googleError != null}" class="nx-alert nx-alert-error" role="alert">
+                    No se pudo completar la autenticación con Google. Intenta con tu correo y contraseña.
+                </div>
 
-        <!-- Botón Oficial de Google Sign-In -->
-        <button type="button" class="btn-google-connect" onclick="iniciarGoogleAuth()" style="height: 50px; font-size: 14px;">
-            <svg class="google-icon-svg" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-            <span>Continuar con Google</span>
-        </button>
+                <form th:action="@{/login}" method="post">
+                    <div class="nx-form-group">
+                        <label for="email" class="nx-label">Correo electrónico</label>
+                        <input type="email"
+                               id="email"
+                               name="email"
+                               class="nx-input"
+                               autocomplete="email"
+                               placeholder="nombre@correo.com"
+                               required>
+                    </div>
 
-        <p class="auth-footer-text">
-            ¿No tienes cuenta?
-            <a th:href="@{/registro}">Regístrate</a>
-        </p>
+                    <div class="nx-form-group">
+                        <label for="password" class="nx-label">Contraseña</label>
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               class="nx-input"
+                               autocomplete="current-password"
+                               placeholder="Tu contraseña"
+                               required>
+                    </div>
 
+                    <button type="submit" class="nx-btn nx-btn-primary nx-btn-block">
+                        Iniciar sesión
+                    </button>
+                </form>
+
+                <!-- Inicio de sesión con Google cuando existe clientId real configurado -->
+                <div th:if="${googleClientId != null and !#strings.isEmpty(googleClientId) and !#strings.contains(googleClientId, 'YOUR_GOOGLE_CLIENT_ID')}">
+                    <div class="nx-auth-divider">o continúa con</div>
+                    <form id="googleSubmitForm" th:action="@{/auth/google}" method="post">
+                        <input type="hidden" id="googleCredentialInput" name="credential">
+                    </form>
+                    <div id="g_id_onload"
+                         th:attr="data-client_id=${googleClientId}"
+                         data-callback="handleGoogleCredentialResponse"
+                         data-auto_prompt="false"></div>
+                    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signin_with" data-shape="rectangular"></div>
+                    <script src="https://accounts.google.com/gsi/client" async defer></script>
+                    <script>
+                        function handleGoogleCredentialResponse(response) {
+                            const input = document.getElementById('googleCredentialInput');
+                            const form = document.getElementById('googleSubmitForm');
+                            if (input && form && response && response.credential) {
+                                input.value = response.credential;
+                                form.submit();
+                            }
+                        }
+                    </script>
+                </div>
+
+                <p class="nx-hint" style="text-align: center; margin: 20px 0 0;">
+                    ¿Aún no tienes cuenta?
+                    <a th:href="@{/registro}" style="font-weight: 700;">Crear cuenta</a>
+                </p>
+            </div>
+        </section>
     </main>
-</div>
 
-<!-- Formulario Oculto para POST hacia /auth/google -->
-<form id="googleSubmitForm" th:action="@{/auth/google}" method="post" style="display: none;">
-    <input type="hidden" name="credential" id="googleCredentialInput">
-</form>
-
-<script th:inline="javascript">
-    const googleClientId = /*[[${googleClientId}]]*/ 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-
-    function handleGoogleCredentialResponse(response) {
-        if (response && response.credential) {
-            document.getElementById('googleCredentialInput').value = response.credential;
-            document.getElementById('googleSubmitForm').submit();
-        }
-    }
-
-    function iniciarGoogleAuth() {
-        if (!googleClientId || googleClientId.includes('YOUR_GOOGLE_CLIENT_ID')) {
-            alert("⚙️ Configuración requerida de Google Cloud:\n\nPara iniciar sesión con tu cuenta de Google, registra tu Client ID en el archivo 'application.properties' bajo la clave:\n\ngoogle.client.id=TU_CLIENT_ID.apps.googleusercontent.com\n\nEl endpoint backend /auth/google ya está 100% listo para recibir y autenticar las credenciales.");
-            return;
-        }
-
-        if (window.google && window.google.accounts) {
-            google.accounts.id.initialize({
-                client_id: googleClientId,
-                callback: handleGoogleCredentialResponse
-            });
-            google.accounts.id.prompt();
-        } else {
-            alert("Cargando servicios de Google... Por favor espera un segundo e intenta de nuevo.");
-        }
-    }
-
-    // Inicializar Google One Tap si el Client ID está configurado
-    window.addEventListener('load', () => {
-        if (window.google && window.google.accounts && googleClientId && !googleClientId.includes('YOUR_GOOGLE_CLIENT_ID')) {
-            google.accounts.id.initialize({
-                client_id: googleClientId,
-                callback: handleGoogleCredentialResponse
-            });
-            google.accounts.id.prompt();
-        }
-    });
-</script>
-
+    <script defer th:src="@{/js/pwa-register.js}"></script>
 </body>
+
 </html>
