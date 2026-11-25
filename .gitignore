@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Repomix exports ###
+repomix-output.xml
+repomix-output.*
