@@ -78,10 +78,11 @@ public class TelegramAccountLinkService {
             return Optional.empty();
         }
 
-        // Impedir duplicidad: si ese telegramUserId ya pertenece a otro usuario activo, rechazar
+        // Impedir apropiacion: si ese telegramUserId pertenece a otro usuario ACTIVO, rechazar
         Optional<CuentaCanal> existentePorTelegram =
-                cuentaCanalRepository.findByCanalAndIdentificadorExternoAndActivaTrue(CANAL_TELEGRAM, telegramUserId);
+                cuentaCanalRepository.findByCanalAndIdentificadorExterno(CANAL_TELEGRAM, telegramUserId);
         if (existentePorTelegram.isPresent()
+                && existentePorTelegram.get().isActiva()
                 && !existentePorTelegram.get().getUsuario().getId().equals(cv.getUsuario().getId())) {
             return Optional.empty();
         }
@@ -94,6 +95,7 @@ public class TelegramAccountLinkService {
                 .ifPresent(prev -> {
                     if (!prev.getIdentificadorExterno().equals(telegramUserId)) {
                         prev.setActiva(false);
+                        prev.setGrupoActivoId(null);
                         cuentaCanalRepository.save(prev);
                     }
                 });
@@ -102,6 +104,7 @@ public class TelegramAccountLinkService {
         cuenta.setUsuario(cv.getUsuario());
         cuenta.setCanal(CANAL_TELEGRAM);
         cuenta.setIdentificadorExterno(telegramUserId);
+        cuenta.setGrupoActivoId(null);
         cuenta.setActiva(true);
         cuenta.setFechaVinculacion(LocalDateTime.now());
 
@@ -113,6 +116,7 @@ public class TelegramAccountLinkService {
         cuentaCanalRepository.findByCanalAndUsuarioIdAndActivaTrue(CANAL_TELEGRAM, usuario.getId())
                 .ifPresent(c -> {
                     c.setActiva(false);
+                    c.setGrupoActivoId(null);
                     cuentaCanalRepository.save(c);
                 });
     }

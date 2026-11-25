@@ -6,6 +6,8 @@ import com.gestorgastos.gestor_gastos.repository.*;
 import com.gestorgastos.gestor_gastos.security.GrupoAccessService;
 import com.gestorgastos.gestor_gastos.service.*;
 import com.gestorgastos.gestor_gastos.service.telegram.TelegramBotClient.InlineButton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import java.util.*;
 @Service
 public class TelegramUpdateRouter {
 
+    private static final Logger log = LoggerFactory.getLogger(TelegramUpdateRouter.class);
     private final TelegramBotClient botClient;
     private final TelegramRateLimiter rateLimiter;
     private final TelegramAccountLinkService linkService;
@@ -61,6 +64,7 @@ public class TelegramUpdateRouter {
         }
         long updateId = update.get("update_id").asLong();
         if (updateProcesadoRepo.existsById(updateId)) {
+            log.info("TG_TELEMETRY event=TELEGRAM_UPDATE_DUPLICATE updateId={}", updateId);
             return;
         }
 
@@ -71,6 +75,7 @@ public class TelegramUpdateRouter {
         }
 
         updateProcesadoRepo.save(new TelegramUpdateProcesado(updateId, LocalDateTime.now()));
+        log.info("TG_TELEMETRY event=TELEGRAM_UPDATE_PROCESSED updateId={}", updateId);
     }
 
     private void manejarMensaje(JsonNode message, long updateId) {

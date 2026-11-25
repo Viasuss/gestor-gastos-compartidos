@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface CuentaCanalRepository extends JpaRepository<CuentaCanal, Long> {
 
+    Optional<CuentaCanal> findByCanalAndIdentificadorExterno(String canal, Long identificadorExterno);
+
     Optional<CuentaCanal> findByCanalAndIdentificadorExternoAndActivaTrue(String canal, Long identificadorExterno);
 
     Optional<CuentaCanal> findByCanalAndUsuarioIdAndActivaTrue(String canal, Long usuarioId);

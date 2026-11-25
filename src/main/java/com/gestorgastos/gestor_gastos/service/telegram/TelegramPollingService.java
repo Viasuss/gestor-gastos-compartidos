@@ -1,10 +1,14 @@
 package com.gestorgastos.gestor_gastos.service.telegram;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -14,6 +18,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 public class TelegramPollingService implements SmartLifecycle {
 
+    private static final Logger log = LoggerFactory.getLogger(TelegramPollingService.class);
+    private static final int MAX_UPDATE_RETRIES = 3;
+
     private final TelegramBotClient botClient;
     private final TelegramUpdateRouter updateRouter;
 
@@ -21,6 +28,7 @@ public class TelegramPollingService implements SmartLifecycle {
     private int pollTimeoutSeconds;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final Map<Long, Integer> failedUpdateAttempts = new ConcurrentHashMap<>();
     private Thread workerThread;
     private long nextOffset = 0L;
 
@@ -37,6 +45,7 @@ public class TelegramPollingService implements SmartLifecycle {
             return;
         }
         if (running.compareAndSet(false, true)) {
+            log.info("TG_TELEMETRY event=TELEGRAM_POLLING_STARTED timeoutSec={}", pollTimeoutSeconds);
             workerThread = new Thread(this::pollLoop, "nexus-telegram-poller");
             workerThread.setDaemon(true);
             workerThread.start();
@@ -51,18 +60,33 @@ public class TelegramPollingService implements SmartLifecycle {
                 backoffMs = 2000L;
                 for (JsonNode update : result.updates()) {
                     long updateId = update.path("update_id").asLong(0);
+                    log.info("TG_TELEMETRY event=TELEGRAM_UPDATE_RECEIVED updateId={} nextOffset={}", updateId, nextOffset);
                     try {
                         updateRouter.procesarUpdate(update);
+                        failedUpdateAttempts.remove(updateId);
                         if (updateId >= nextOffset) {
                             nextOffset = updateId + 1;
+                            log.debug("TG_TELEMETRY event=TELEGRAM_OFFSET_ADVANCED nextOffset={}", nextOffset);
                         }
                     } catch (Exception ex) {
-                        // No avanzar offset si falla el procesamiento critico; backoff breve
-                        sleepQuietly(1000L);
+                        int attempts = failedUpdateAttempts.merge(updateId, 1, Integer::sum);
+                        String sqlMeta = extractSafeSqlMeta(ex);
+                        log.warn("TG_TELEMETRY event=TELEGRAM_UPDATE_ERROR updateId={} attempts={} category={} {}",
+                                updateId, attempts, ex.getClass().getSimpleName(), sqlMeta);
+                        if (attempts >= MAX_UPDATE_RETRIES && updateId >= nextOffset) {
+                            nextOffset = updateId + 1;
+                            failedUpdateAttempts.remove(updateId);
+                            log.error("TG_TELEMETRY event=TELEGRAM_UPDATE_POISON_SKIPPED updateId={} nextOffset={}",
+                                    updateId, nextOffset);
+                        } else {
+                            sleepQuietly(1000L);
+                        }
                     }
                 }
             } else {
                 int status = result.httpStatus();
+                log.warn("TG_TELEMETRY event=TELEGRAM_POLL_HTTP_ERROR status={} retryAfterSec={}",
+                        status, result.retryAfterSeconds());
                 if (status == 401 || status == 403 || status == 409) {
                     // Token invalido (401/403) o conflicto de webhook existente (409): detener sin destruir webhook
                     running.set(false);
@@ -77,6 +101,17 @@ public class TelegramPollingService implements SmartLifecycle {
         }
     }
 
+    private String extractSafeSqlMeta(Throwable ex) {
+        Throwable cur = ex;
+        while (cur != null) {
+            if (cur instanceof java.sql.SQLException sqlEx) {
+                return "sqlState=" + sqlEx.getSQLState() + " sqlCode=" + sqlEx.getErrorCode();
+            }
+            cur = cur.getCause();
+        }
+        return "";
+    }
+
     private void sleepQuietly(long millis) {
         try {
             Thread.sleep(millis);
@@ -87,7 +122,9 @@ public class TelegramPollingService implements SmartLifecycle {
 
     @Override
     public void stop() {
-        running.set(false);
+        if (running.compareAndSet(true, false)) {
+            log.info("TG_TELEMETRY event=TELEGRAM_POLLING_STOPPED nextOffset={}", nextOffset);
+        }
         if (workerThread != null) {
             workerThread.interrupt();
         }
