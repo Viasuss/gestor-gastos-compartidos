@@ -111,7 +111,12 @@ public class BorradorOperacionController {
             return "redirect:/login";
         }
 
-        BigDecimal monto = MoneyParser.parseCop(montoCop).orElse(BigDecimal.ZERO);
+        Optional<BigDecimal> montoOpt = MoneyParser.parseCopAcceptingZeroDecimals(montoCop);
+        if (montoOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorBandeja", "Monto inválido. Ingresa un valor entero en COP (ej: 60000).");
+            return "redirect:/asistente";
+        }
+        BigDecimal monto = montoOpt.get();
         LocalDate fechaParsed;
         try {
             fechaParsed = LocalDate.parse(fecha.trim());
