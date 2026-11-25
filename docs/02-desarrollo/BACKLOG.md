@@ -24,11 +24,8 @@
 
 > **Estado acelerado (B0–B6):** Los bloques `B0` a `B6` han sido completados hasta la versión candidata `release/nexus-v1.0-rc1` con 48 pruebas automatizadas aisladas aprobadas, documentación de entrega en `docs/09-entrega/`, perfil `demo` aislado y correcciones de concurrencia en `LiquidacionService` y `ResourceManager`. Ver `docs/08-informes-de-fase/B6_VALIDACION_FINAL_ENTREGA.md`.
 
-### Observaciones registradas en validación real B6.2.3 (para B6.3 / B6.4)
-- `OBS-TG-01`: La interpretación local produce `"Alimentos por pesos"` en lugar de `"Alimentos"`.
-- `OBS-TG-02`: `/saldo` y `/deudas` presentan actualmente la misma información; evaluar vista diferenciada por persona.
-- `OBS-TG-03`: Telegram muestra el botón `Confirmar` en borradores `REQUIERE_ACLARACION`; ocultar cuando no corresponda.
-- `OBS-UI-01`: Los campos de la bandeja inteligente conservan estilos básicos del navegador y requieren refinamiento visual.
-- `OBS-UI-02`: Mostrar `REQUIERE_ACLARACION` como `"Requiere aclaración"`.
-- `OBS-UI-03`: Mostrar `LOCAL_RULES` como `"Interpretación local"`.
-- `OBS-UI-04`: Mostrar el origen Telegram o Web mediante etiqueta visual.
+### Observaciones de validación real B6.2.3 resueltas en B6.3 / B6.4
+- `OBS-TG-01` (**Resuelta**): `LocalRulesProvider` limpia `"por ... pesos"` (`"Compre alimentos por 45000 pesos"` → `"Alimentos"`).
+- `OBS-TG-02` (**Resuelta**): `/deudas` muestra detalle persona a persona (`deudaService.calcularDeudas`) diferenciado de `/saldo`.
+- `OBS-TG-03` (**Resuelta**): Telegram oculta el botón `✓ Confirmar` en borradores `REQUIERE_ACLARACION` (manteniendo validación backend).
+- `OBS-UI-01..04` (**Resueltas**): `bandeja.html` refinada con etiquetas legibles (`Requiere aclaración`, `Interpretación local`, `Interpretación con IA`), badge de canal (`Telegram`/`Web`) y formato entero `#numbers.formatDecimal(..., 1, 0)`.

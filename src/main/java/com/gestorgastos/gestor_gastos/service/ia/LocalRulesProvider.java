@@ -178,10 +178,11 @@ public class LocalRulesProvider implements AiProvider {
     private String extraerConcepto(String texto) {
         String limpio = texto
                 .replaceAll("(?i)\\b(pagu[eé]|compr[eé]|gast[eé]|div[ií]delo|dividir|entre\\s+todos|entre\\s+\\w+|ayer|hoy)\\b", "")
+                .replaceAll("(?i)\\b(?:por|de)\\s+(?:un|1)\\s+mill[oó]n(?:es)?\\b", "")
                 .replaceAll("(?i)\\b(un|1)\\s+mill[oó]n(?:es)?\\b", "")
-                .replaceAll("(?i)\\b\\d+(?:[.,]\\d+)?\\s*(?:lucas|mil|k)\\b", "")
-                .replaceAll("(?:\\$\\s*|\\b)\\d{1,3}(?:\\.\\d{3})+(?:\\s*pesos)?\\b", "")
-                .replaceAll("\\b\\d{4,12}\\b", "")
+                .replaceAll("(?i)\\b(?:por\\s+)?\\d+(?:[.,]\\d+)?\\s*(?:lucas|mil|k)\\b", "")
+                .replaceAll("(?i)\\b(?:por\\s+)?(?:\\$\\s*)?(?:\\d{1,3}(?:\\.\\d{3})+|\\d{4,12})(?:\\s*(?:pesos|cop))?\\b", "")
+                .replaceAll("(?i)\\bpesos\\b", "")
                 .replaceAll("\\s+", " ")
                 .replaceAll("^[\\s,.:;-]+|[\\s,.:;-]+$", "")
                 .trim();

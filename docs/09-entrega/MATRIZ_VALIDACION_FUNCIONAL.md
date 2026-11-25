@@ -1,13 +1,14 @@
-# Matriz de Validación Funcional — NEXUS (B6)
+# Matriz de Validación Funcional — NEXUS (Cierre B6.4)
 
 | Área / Funcionalidad | Estado | Evidencia / Mecanismo de Verificación | Observaciones |
 |---|---|---|---|
-| Seguridad Spring Security, CSRF, BCrypt, acceso grupos | Verificado | H2 + MockMvc (`SecurityIntegrationTest`) | Cobertura automatizada |
-| Núcleo financiero (`DeudaService`, suma cero, multi-pagador) | Verificado | H2 (`DeudaServiceCharacterizationTest`, `B6ValidationSuiteTest`) | `BigDecimal` determinista |
-| Liquidaciones bilaterales, idempotencia y bloqueo pesimista | Verificado | H2 (`LiquidacionIntegrationTest`, `B6ValidationSuiteTest`) | Añadido `findByIdForUpdate` en `GrupoRepository` |
-| Bandeja Inteligente, `ResourceManager`, circuit breaker | Verificado | H2 + Mocks (`ResourceManagerAndIaTest`, `B6ValidationSuiteTest`) | Lock `quotaLock` añadido |
-| Telegram privado (código `NX-...`, rate-limit, comandos) | Verificado (simulado) | H2 + Mocks (`TelegramIntegrationTest`, `B5ExperienceAndPwaTest`) | Prueba real con bot pendiente de sesión del propietario |
-| Telegram grupal | Deshabilitado por defecto | `TELEGRAM_GROUPS_ENABLED=false` + pruebas simuladas | Requiere autorización explícita para demo grupal |
-| Identidad NEXUS, navegación y PWA (`manifest`, `sw.js`) | Verificado (MockMvc) | H2 + MockMvc (`B5ExperienceAndPwaTest`) | Inspección visual en navegador real pendiente de sesión UI |
-| MySQL 8 (`nexus_demo`), Flyway `V1`–`V4` y `ddl-auto=validate` | Preparado | Scripts `V1`–`V4` + `application-demo.properties` + `DemoDataSeeder` | Pendiente de ejecución con credenciales MySQL del propietario |
-| Groq API real (3 casos sintéticos) | Pendiente | `application-demo.properties` + `GroqProvider` | Requiere `GROQ_API_KEY` del propietario en entorno demo |
+| Seguridad Spring Security, CSRF, BCrypt, acceso grupos | Verificado | H2 + MockMvc + MySQL `nexus_demo` | Operativo |
+| Núcleo financiero (`DeudaService`, suma cero, multi-pagador) | Verificado | H2 + MySQL real `nexus_demo` | Casos A/B/C/D validados en vivo |
+| Liquidaciones bilaterales, idempotencia y bloqueo pesimista | Verificado | H2 + MySQL real `nexus_demo` | `READ_COMMITTED` + `findByIdForUpdate` |
+| Normalización monetaria `MoneyParser` (`60000.00` exacto) | Verificado | `B63AndB64FixesTest` + `BandejaWebConfirmTest` | Rechaza fracciones no nulas (`.50`) |
+| Groq Free API | Parcialmente verificado | Real: Caso A incompleto (`GROQ`, `REQUIERE_ACLARACION`, `1577 ms`); Completo: Mocks | `openai/gpt-oss-20b` + `reasoning_format=hidden` |
+| Telegram privado (`@NexusFinanzasBot`) | Verificado en vivo | T01–T09 reales + revinculación segura + polling estable | `OBS-TG-01..03` resueltos |
+| Flujo financiero multicanal (M01) | Verificado en vivo | Borrador `#10` Telegram → Web `$60.000` → Saldo Telegram actualizado | Idempotencia multicanal verificada |
+| Telegram grupal | Deshabilitado por defecto | `TELEGRAM_GROUPS_ENABLED=false` + pruebas simuladas | No habilitado en demo |
+| MySQL 8 (`nexus_demo`), Flyway `V1`–`V4` y `ddl-auto=validate` | Verificado en vivo | Arranques reales en `nexus_demo` (`nexus_demo_user`) | `gestor_gastos` intacta |
+| PWA (`manifest.webmanifest`, `sw.js`, `offline.html`) | Verificado (MockMvc + estática) | `B5ExperienceAndPwaTest` (`STATIC_ALLOWLIST` sin datos privados) | Instalación física en navegador pendiente de demo |

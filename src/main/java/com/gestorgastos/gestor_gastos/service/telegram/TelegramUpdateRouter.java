@@ -163,8 +163,12 @@ public class TelegramUpdateRouter {
             return;
         }
 
-        if (text.equals("/saldo") || text.equals("/deudas")) {
+        if (text.equals("/saldo")) {
             enviarResumenSaldos(chatId, cuenta.getUsuario());
+            return;
+        }
+        if (text.equals("/deudas")) {
+            enviarDetalleDeudas(chatId, cuenta);
             return;
         }
 
@@ -345,17 +349,23 @@ public class TelegramUpdateRouter {
             b.setOrigen("TELEGRAM");
             borradorRepository.save(b);
 
-            String montoTxt = b.getMontoCop() != null ? "$" + b.getMontoCop().toPlainString() : "Por definir";
-            String msg = "Borrador #" + b.getId() + " (" + b.getEstado() + ")\n"
+            String montoTxt = b.getMontoCop() != null ? "$" + b.getMontoCop().setScale(0).toPlainString() : "Por definir";
+            String estadoTxt = b.getEstado() == EstadoBorrador.REQUIERE_ACLARACION
+                    ? "Requiere aclaración"
+                    : "Pendiente";
+            String msg = "Borrador #" + b.getId() + " (" + estadoTxt + ")\n"
                     + "Grupo: " + b.getGrupo().getName() + "\n"
                     + "Concepto: " + b.getConcepto() + "\n"
                     + "Monto: " + montoTxt;
 
-            List<List<InlineButton>> kb = List.of(List.of(
-                    new InlineButton("✓ Confirmar", "CONF:" + b.getId()),
-                    new InlineButton("✕ Descartar", "DESC:" + b.getId())
-            ));
-            botClient.sendMessage(chatId, msg, kb);
+            List<InlineButton> row = new ArrayList<>();
+            if (b.getEstado() == EstadoBorrador.PENDIENTE && b.getMontoCop() != null) {
+                row.add(new InlineButton("✓ Confirmar", "CONF:" + b.getId()));
+            } else {
+                msg += "\nComplétalo en la Bandeja Web de NEXUS para confirmar.";
+            }
+            row.add(new InlineButton("✕ Descartar", "DESC:" + b.getId()));
+            botClient.sendMessage(chatId, msg, List.of(row));
         } catch (IllegalArgumentException ex) {
             botClient.sendMessage(chatId, ex.getMessage(), null);
         }
@@ -380,6 +390,34 @@ public class TelegramUpdateRouter {
         botClient.sendMessage(chatId, sb.toString(), null);
     }
 
+    private void enviarDetalleDeudas(long chatId, CuentaCanal cuenta) {
+        if (cuenta.getGrupoActivoId() == null) {
+            enviarResumenSaldos(chatId, cuenta.getUsuario());
+            return;
+        }
+        Grupo grupo = grupoAccessService.findGrupoSiEsMiembroActivo(cuenta.getGrupoActivoId(), cuenta.getUsuario()).orElse(null);
+        if (grupo == null) {
+            botClient.sendMessage(chatId, "Selecciona un grupo activo con /grupos.", null);
+            return;
+        }
+        List<DeudaConPersona> deudas = deudaService.calcularDeudas(grupo, cuenta.getUsuario());
+        if (deudas.isEmpty()) {
+            botClient.sendMessage(chatId, "En " + grupo.getName() + " estás a paz y salvo ($0).", null);
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Deudas en ").append(grupo.getName()).append(":\n");
+        for (DeudaConPersona d : deudas) {
+            if (d.leDebo()) {
+                sb.append("• Debes a ").append(d.getOtraPersona().getName())
+                        .append(": $").append(d.getMonto().abs().setScale(0).toPlainString()).append("\n");
+            } else if (d.getMonto().signum() > 0) {
+                sb.append("• ").append(d.getOtraPersona().getName())
+                        .append(" te debe: $").append(d.getMonto().abs().setScale(0).toPlainString()).append("\n");
+            }
+        }
+        botClient.sendMessage(chatId, sb.toString(), null);
+    }
+
     private void enviarPendientes(long chatId, Usuario usuario) {
         List<BorradorOperacion> pendientes = borradorRepository.findByUsuarioIdOrderByFechaCreacionDesc(usuario.getId())
                 .stream()
@@ -393,7 +431,7 @@ public class TelegramUpdateRouter {
         StringBuilder sb = new StringBuilder("Borradores pendientes:\n");
         for (BorradorOperacion b : pendientes) {
             sb.append("#").append(b.getId()).append(" · ").append(b.getConcepto())
-                    .append(" ($").append(b.getMontoCop() != null ? b.getMontoCop().toPlainString() : "?").append(")\n");
+                    .append(" ($").append(b.getMontoCop() != null ? b.getMontoCop().setScale(0).toPlainString() : "?").append(")\n");
         }
         botClient.sendMessage(chatId, sb.toString(), null);
     }
