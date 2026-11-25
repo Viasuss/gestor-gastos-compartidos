@@ -14,6 +14,7 @@ import com.gestorgastos.gestor_gastos.repository.GrupoRepository;
 import com.gestorgastos.gestor_gastos.repository.MiembroGrupoRepository;
 import com.gestorgastos.gestor_gastos.repository.PagoGastoRepository;
 
+import com.gestorgastos.gestor_gastos.service.GastoService;
 import com.gestorgastos.gestor_gastos.service.MoneyParser;
 
 import jakarta.servlet.http.HttpSession;
@@ -45,24 +46,18 @@ public class GastoController {
     private static final BigDecimal MONTO_MAXIMO = new BigDecimal("999999999999");
     private static final int DESCRIPCION_MAXIMA = 100;
 
-    private final GastoRepository gastoRepository;
-    private final GastoParticipanteRepository gastoParticipanteRepository;
     private final GrupoRepository grupoRepository;
     private final MiembroGrupoRepository miembroGrupoRepository;
-    private final PagoGastoRepository pagoGastoRepository;
+    private final GastoService gastoService;
 
     public GastoController(
-            GastoRepository gastoRepository,
-            GastoParticipanteRepository gastoParticipanteRepository,
             GrupoRepository grupoRepository,
             MiembroGrupoRepository miembroGrupoRepository,
-            PagoGastoRepository pagoGastoRepository) {
+            GastoService gastoService) {
 
-        this.gastoRepository = gastoRepository;
-        this.gastoParticipanteRepository = gastoParticipanteRepository;
         this.grupoRepository = grupoRepository;
         this.miembroGrupoRepository = miembroGrupoRepository;
-        this.pagoGastoRepository = pagoGastoRepository;
+        this.gastoService = gastoService;
     }
 
 
@@ -134,7 +129,6 @@ public class GastoController {
     //
     // Como los errores son "return redirect" (no excepciones), @Transactional
     // no los revertiría: por eso la regla es validar primero, guardar después.
-    @Transactional
     @PostMapping("/grupo/{id}/gasto")
     public String guardarGasto(
             @PathVariable Long id,
@@ -153,39 +147,8 @@ public class GastoController {
             HttpSession session) {
 
         Usuario usuario = (Usuario) session.getAttribute("usuario");
-
         if (usuario == null) {
             return "redirect:/login";
-        }
-
-        // Miembros ACTIVOS del grupo (no invitaciones pendientes ni
-        // rechazadas), consultados una sola vez y guardados por id de
-        // usuario. Sirve para validar al que guarda, a los pagadores y a
-        // los participantes.
-        List<MiembroGrupo> activos =
-                miembroGrupoRepository.findByGrupoIdAndEstado(
-                        id,
-                        EstadoMiembro.MIEMBRO
-                );
-
-        Map<Long, Usuario> miembrosPorId = new HashMap<>();
-        for (MiembroGrupo m : activos) {
-            miembrosPorId.put(m.getUsuario().getId(), m.getUsuario());
-        }
-
-        if (!miembrosPorId.containsKey(usuario.getId())) {
-            return "redirect:/mis-grupos";
-        }
-
-        Grupo grupo = grupoRepository.findById(id).orElse(null);
-
-        if (grupo == null) {
-            return "redirect:/mis-grupos";
-        }
-
-        String cleanKey = (idempotencyKey != null && !idempotencyKey.isBlank()) ? idempotencyKey.trim() : null;
-        if (cleanKey != null && gastoRepository.findByGrupoIdAndIdempotencyKey(id, cleanKey).isPresent()) {
-            return "redirect:/grupo/" + id;
         }
 
         String errorBase = "redirect:/grupo/" + id + "/gasto/nuevo?error=";
@@ -193,131 +156,33 @@ public class GastoController {
         redirectAttributes.addFlashAttribute("prevMonto", monto);
         redirectAttributes.addFlashAttribute("prevFecha", fecha);
 
-        // ---- Descripción: obligatoria y de largo razonable ----
-        String descripcionLimpia = descripcion == null ? "" : descripcion.trim();
-
-        if (descripcionLimpia.isEmpty() || descripcionLimpia.length() > DESCRIPCION_MAXIMA) {
-            return errorBase + "descripcion";
-        }
-
-        // ---- Monto total: mayor que 0 y con un tope ----
         BigDecimal montoTotal = MoneyParser.parseCop(monto).orElse(BigDecimal.ZERO);
-
-        if (montoTotal.signum() <= 0 || montoTotal.compareTo(MONTO_MAXIMO) > 0) {
-            return errorBase + "monto";
-        }
-
-        // ---- Fecha: válida y no inventada en el futuro. Se permite hasta
-        // mañana por si el servidor y el navegador están en husos horarios
-        // distintos. ----
         LocalDate fechaGasto;
-
         try {
             fechaGasto = LocalDate.parse(fecha == null ? "" : fecha.trim());
         } catch (DateTimeParseException e) {
             return errorBase + "fecha";
         }
 
-        if (fechaGasto.isAfter(LocalDate.now().plusDays(1))) {
-            return errorBase + "fecha";
-        }
-
-        // ---- Pagadores ----
-        if (pagadoresId == null || pagadoresId.isEmpty()) {
-            return errorBase + "pagadores";
-        }
-
-        // Las dos listas deben venir del mismo tamaño y sin pagadores repetidos
-        if (montosPagados == null
-                || pagadoresId.size() != montosPagados.size()
-                || new HashSet<>(pagadoresId).size() != pagadoresId.size()) {
-            return errorBase + "pagos";
-        }
-
         List<BigDecimal> montosConvertidos = new ArrayList<>();
-        BigDecimal sumaPagos = BigDecimal.ZERO;
-
-        for (int i = 0; i < pagadoresId.size(); i++) {
-
-            // Cada pagador tiene que ser MIEMBRO del grupo. Ya no se
-            // "salta" en silencio: si alguno no lo es, se rechaza todo.
-            if (!miembrosPorId.containsKey(pagadoresId.get(i))) {
-                return errorBase + "pagos";
-            }
-
-            BigDecimal montoPago = MoneyParser.parseCop(montosPagados.get(i)).orElse(BigDecimal.ZERO);
-
-            // Un pagador marcado con el monto vacío o en 0 no tiene sentido
-            if (montoPago.signum() <= 0) {
-                return errorBase + "pagomonto";
-            }
-
-            montosConvertidos.add(montoPago);
-            sumaPagos = sumaPagos.add(montoPago);
-        }
-
-        // La suma de lo que pusieron los pagadores debe ser EXACTAMENTE
-        // el monto total del gasto
-        if (sumaPagos.compareTo(montoTotal) != 0) {
-            return errorBase + "suma";
-        }
-
-        // ---- Participantes: al menos uno, todos miembros del grupo ----
-        if (participantes == null || participantes.isEmpty()) {
-            return errorBase + "participantes";
-        }
-
-        // LinkedHashSet: quita repetidos y conserva el orden
-        Set<Long> participantesUnicos = new LinkedHashSet<>(participantes);
-
-        for (Long participanteId : participantesUnicos) {
-            if (!miembrosPorId.containsKey(participanteId)) {
-                return errorBase + "participantes";
+        if (montosPagados != null) {
+            for (String mp : montosPagados) {
+                montosConvertidos.add(MoneyParser.parseCop(mp).orElse(BigDecimal.ZERO));
             }
         }
-
-        // ==========================================
-        // Todo es válido: recién ahora se guarda
-        // ==========================================
-
-        Gasto gasto = new Gasto();
-
-        gasto.setDescripcion(descripcionLimpia);
-        gasto.setMonto(montoTotal);
-        gasto.setFecha(fechaGasto);
-        gasto.setGrupo(grupo);
-        gasto.setIdempotencyKey(cleanKey);
 
         try {
-            gastoRepository.save(gasto);
-        } catch (DataIntegrityViolationException ex) {
-            // Proteccion ante condicion de carrera con la misma clave de idempotencia
+            gastoService.registrarGasto(
+                    id, usuario, descripcion, montoTotal, fechaGasto,
+                    pagadoresId, montosConvertidos, participantes, idempotencyKey
+            );
             return "redirect:/grupo/" + id;
+        } catch (GastoService.GastoValidationException ex) {
+            if ("acceso".equals(ex.getErrorCode())) {
+                return "redirect:/mis-grupos";
+            }
+            return errorBase + ex.getErrorCode();
         }
-
-        for (int i = 0; i < pagadoresId.size(); i++) {
-
-            PagoGasto pago = new PagoGasto();
-
-            pago.setGasto(gasto);
-            pago.setUsuario(miembrosPorId.get(pagadoresId.get(i)));
-            pago.setMonto(montosConvertidos.get(i));
-
-            pagoGastoRepository.save(pago);
-        }
-
-        for (Long participanteId : participantesUnicos) {
-
-            GastoParticipante gastoParticipante = new GastoParticipante();
-
-            gastoParticipante.setUsuario(miembrosPorId.get(participanteId));
-            gastoParticipante.setGrupo(grupo);
-            gastoParticipante.setGasto(gasto);
-
-            gastoParticipanteRepository.save(gastoParticipante);
-        }
-
-        return "redirect:/grupo/" + id;
     }
 
 
