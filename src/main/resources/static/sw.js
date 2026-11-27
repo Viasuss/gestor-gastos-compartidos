@@ -1,18 +1,19 @@
-const CACHE_NAME = 'nexus-static-v1';
+const CACHE_NAME = 'nexus-static-v3';
 
-// Lista explicita y cerrada de recursos estaticos publicos permitidos.
-// PROHIBIDO cachear HTML autenticado, /inicio, /grupo/**, /asistente, /integraciones,
-// /liquidaciones, respuestas POST, tokens o datos financieros privados.
+// Política estática: solo recursos públicos sin información financiera ni de sesión.
 const STATIC_ALLOWLIST = [
-    '/css/partly.css',
-    '/css/nexus.css',
-    '/img/nexus-isotipo.svg',
-    '/img/nexus-logo-horizontal.svg',
-    '/img/icon-192.png',
-    '/img/icon-512.png',
-    '/js/pwa-register.js',
+    '/manifest.webmanifest',
     '/offline.html',
-    '/manifest.webmanifest'
+    '/css/nexus-tokens.css',
+    '/css/nexus-shell.css',
+    '/css/nexus-components.css',
+    '/css/nexus-views.css',
+    '/css/nexus.css',
+    '/js/nexus-shell.js',
+    '/js/pwa-register.js',
+    '/img/nexus-isotipo.svg',
+    '/img/icon-192.png',
+    '/img/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -25,34 +26,44 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) =>
-            Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+            Promise.all(
+                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+            )
         )
     );
     self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-    const req = event.request;
-    if (req.method !== 'GET') {
+    const request = event.request;
+    if (request.method !== 'GET') {
         return;
     }
 
-    const url = new URL(req.url);
+    const url = new URL(request.url);
     if (url.origin !== self.location.origin) {
+        return;
+    }
+
+    // Nunca cachear vistas HTML ni rutas autenticadas financieras.
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request).catch(() => caches.match('/offline.html'))
+        );
         return;
     }
 
     if (STATIC_ALLOWLIST.includes(url.pathname)) {
         event.respondWith(
-            caches.match(req).then((cached) => cached || fetch(req))
-        );
-        return;
-    }
-
-    // Todas las rutas financieras y HTML autenticado dependen estrictamente de la red.
-    if (req.mode === 'navigate') {
-        event.respondWith(
-            fetch(req).catch(() => caches.match('/offline.html'))
+            caches.match(request).then((cached) =>
+                cached || fetch(request).then((response) => {
+                    if (response && response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+                    }
+                    return response;
+                })
+            )
         );
     }
 });

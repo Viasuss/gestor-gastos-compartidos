@@ -1,188 +1,272 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/nexus-layout :: head(${grupo.name} + ' · NEXUS')}"></head>
-<body>
-<div th:replace="~{fragments/nexus-layout :: topnav('grupos')}"></div>
 
-<!-- ENCABEZADO -->
-<header class="subpage-header">
-    <a th:href="@{/mis-grupos}" class="btn-back" aria-label="Volver">←</a>
-    <h1 class="subpage-title" th:text="${grupo.name}">Nombre del grupo</h1>
-</header>
+<head th:replace="~{fragments/nexus-layout :: nexusHead(${grupo.name} + ' — NEXUS')}"></head>
 
-<main class="page-content">
+<body th:replace="~{fragments/nexus-layout :: appBody('grupos', ${grupo.name}, 'Mis grupos', '/mis-grupos', ~{::#nexus-page-content})}">
+    <div id="nexus-page-content">
 
-    <!-- TARJETA HERO OSCURA (BALANCE Y DETALLE DE DEUDAS) -->
-    <section class="hero-dark-card">
-        <!-- Encabezado según el estado del balance -->
-        <p class="hero-dark-label" th:if="${balanceTotal.signum() > 0}">
-            TE DEBEN EN TOTAL
-        </p>
-        <p class="hero-dark-label" th:if="${balanceTotal.signum() < 0}">
-            DEBES EN TOTAL
-        </p>
-        <p class="hero-dark-label" th:if="${balanceTotal.signum() == 0}">
-            A PAZ Y SALVO
-        </p>
+        <!-- Mensajes de estado -->
+        <div th:if="${param.gastoAgregado != null}" class="nx-alert nx-alert-success" role="status">
+            Gasto registrado correctamente. Los saldos del grupo se recalcularon de forma determinista.
+        </div>
+        <div th:if="${param.liquidacionCreada != null}" class="nx-alert nx-alert-success" role="status">
+            Liquidación registrada en estado pendiente de confirmación por el receptor.
+        </div>
+        <div th:if="${param.liquidacionActualizada != null}" class="nx-alert nx-alert-success" role="status">
+            Estado de la liquidación actualizado correctamente.
+        </div>
+        <div th:if="${errorLiquidacion != null}" class="nx-alert nx-alert-error" role="alert" th:text="${errorLiquidacion}">
+            Error al procesar la liquidación.
+        </div>
 
-        <!-- Monto total -->
-        <p class="hero-dark-amount"
-           th:text="'$' + ${#numbers.formatDecimal(balanceTotal.abs(), 1, 'POINT', 0, 'COMMA')}">
-            $0
-        </p>
-
-        <!-- Divisor sutil -->
-        <div class="hero-dark-divider"></div>
-
-        <!-- Desglose por persona -->
-        <div class="hero-debtors-list">
-            <!-- Si no hay deudas pendientes -->
-            <p th:if="${#lists.isEmpty(deudas)}" style="font-size: 13px; color: #BFC4CC; margin: 0;">
-                No tienes movimientos pendientes en este grupo.
-            </p>
-
-            <!-- Lista de deudas con cada persona -->
-            <div th:unless="${#lists.isEmpty(deudas)}" th:each="deuda : ${deudas}" class="hero-debtor-row">
-                <!-- Avatar circular blanco translúcido -->
-                <span class="hero-debtor-avatar"
-                      th:text="${#strings.toUpperCase(#strings.substring(deuda.otraPersona.name, 0, 1))}">U</span>
-
-                <!-- Nombre de la persona -->
-                <span class="hero-debtor-name" th:text="${deuda.otraPersona.name}">Nombre</span>
-
-                <!-- Te deben (verde) -->
-                <span th:if="${deuda.meDeben()}"
-                      class="hero-debtor-amount positive"
-                      th:text="'+ $' + ${#numbers.formatDecimal(deuda.monto, 1, 'POINT', 0, 'COMMA')}">
-                    +$0
-                </span>
-
-                <!-- Debes (coral) -->
-                <span th:if="${deuda.leDebo()}"
-                      class="hero-debtor-amount negative"
-                      th:text="'- $' + ${#numbers.formatDecimal(deuda.monto.abs(), 1, 'POINT', 0, 'COMMA')}">
-                    -$0
-                </span>
+        <!-- Encabezado y acciones principales del grupo -->
+        <section class="nx-page-header">
+            <div>
+                <h1 class="nx-page-title" th:text="${grupo.name}">Nombre del grupo</h1>
+                <p class="nx-page-subtitle">
+                    Creado por <strong th:text="${grupo.creador != null} ? ${grupo.creador.name} : 'Usuario'">Creador</strong>
+                    <span th:if="${grupo.fechaCreacion != null}"> el <span th:text="${#temporals.format(grupo.fechaCreacion, 'dd/MM/yyyy')}">01/01/2026</span></span>
+                    &middot; <span th:text="${#lists.size(miembros)}">0</span> miembros activos
+                </p>
             </div>
-        </div>
-    </section>
-
-    <!-- INTEGRANTES (CHIPS CIRCULARES) -->
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Integrantes:</span>
-        <div class="members-chips-row">
-            <span th:each="miembro : ${miembros}"
-                  class="member-chip-avatar"
-                  th:title="${miembro.usuario.name}"
-                  th:text="${#strings.toUpperCase(#strings.substring(miembro.usuario.name, 0, 1))}">
-                J
-            </span>
-        </div>
-    </div>
-
-    <!-- BOTÓN AGREGAR GASTO Y REGISTRAR LIQUIDACIÓN -->
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}"
-           class="btn-submit"
-           style="height: 50px; margin-top: 0; flex: 1;">
-            +&nbsp;&nbsp;Agregar gasto
-        </a>
-        <a th:href="@{/grupo/{id}/liquidar(id=${grupo.id})}"
-           class="btn-quick btn-quick-secondary"
-           style="height: 50px; flex: 1; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-            Pagar / Liquidar
-        </a>
-    </div>
-
-    <!-- LIQUIDACIONES Y CONFIRMACIÓN BILATERAL -->
-    <section class="section-block" th:if="${!#lists.isEmpty(liquidaciones)}">
-        <h2 class="section-block-title" style="font-size: 16px;">Liquidaciones del grupo</h2>
-        <div th:if="${errorLiquidacion}" class="alert-error" style="margin-bottom: 10px;" th:text="${errorLiquidacion}"></div>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div th:each="liq : ${liquidaciones}" class="expense-card" style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600;"
-                          th:text="${liq.pagador.name + ' → ' + liq.receptor.name}">
-                        Pagador → Receptor
-                    </span>
-                    <strong th:text="${'$' + #numbers.formatInteger(liq.monto, 1, 'POINT')}">$0</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #5C6B66;">
-                    <span th:text="${liq.estado + ' · ' + liq.metodoPago + (liq.estado.name() == 'CONFIRMADA' ? ' (Afecta saldo)' : ' (No afecta saldo)')}">
-                        ESTADO
-                    </span>
-                    <span th:text="${#temporals.format(liq.fechaCreacion, 'dd/MM/yyyy HH:mm')}">Fecha</span>
-                </div>
-                <div th:if="${liq.estado.name() == 'PENDIENTE'}" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <form th:if="${liq.receptor.id == usuarioActualId}"
-                          th:action="@{/liquidacion/{id}/confirmar(id=${liq.id})}" method="post" style="margin: 0;">
-                        <button type="submit" class="btn-submit" style="height: 36px; padding: 0 14px; font-size: 13px;">
-                            Confirmar recepción
-                        </button>
-                    </form>
-                    <form th:if="${liq.receptor.id == usuarioActualId}"
-                          th:action="@{/liquidacion/{id}/rechazar(id=${liq.id})}" method="post" style="margin: 0;">
-                        <button type="submit" class="btn-quick btn-quick-secondary" style="height: 36px; padding: 0 14px; font-size: 13px;">
-                            Rechazar
-                        </button>
-                    </form>
-                    <form th:if="${liq.pagador.id == usuarioActualId}"
-                          th:action="@{/liquidacion/{id}/cancelar(id=${liq.id})}" method="post" style="margin: 0;">
-                        <button type="submit" class="btn-quick btn-quick-secondary" style="height: 36px; padding: 0 14px; font-size: 13px;">
-                            Cancelar solicitud
-                        </button>
-                    </form>
-                </div>
+            <div class="nx-page-actions">
+                <a th:href="@{/grupo/{id}/liquidar(id=${grupo.id})}" class="nx-btn nx-btn-secondary">
+                    Registrar pago
+                </a>
+                <a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}" class="nx-btn nx-btn-primary">
+                    + Agregar gasto
+                </a>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- HISTORIAL DE GASTOS -->
-    <section class="section-block">
-        <h2 class="section-block-title" style="font-size: 16px;">Historial de gastos</h2>
-
-        <!-- Estado vacío -->
-        <div class="empty-state" th:if="${#lists.isEmpty(gastos)}">
-            Todavía no hay gastos registrados en este grupo.
-        </div>
-
-        <!-- Lista de tarjetas de gasto -->
-        <div class="expenses-list" th:unless="${#lists.isEmpty(gastos)}">
-            <article th:each="gasto : ${gastos}" class="expense-card">
-                <div class="expense-card-top">
-                    <h3 class="expense-card-title" th:text="${gasto.descripcion}">
-                        Descripción del gasto
-                    </h3>
-                    <span class="expense-card-amount"
-                          th:text="'$' + ${#numbers.formatDecimal(gasto.monto, 1, 'POINT', 0, 'COMMA')}">
-                        $0
-                    </span>
+        <!-- Métricas del grupo -->
+        <section class="nx-hero-grid" aria-label="Métricas del grupo">
+            <article class="nx-hero-card nx-hero-card--primary">
+                <div class="nx-hero-label">
+                    <span>Tu saldo en este grupo</span>
+                    <span th:if="${balanceTotal != null and balanceTotal.signum() > 0}" class="nx-badge nx-badge-emerald">A favor</span>
+                    <span th:if="${balanceTotal != null and balanceTotal.signum() < 0}" class="nx-badge nx-badge-danger">Debes</span>
+                    <span th:if="${balanceTotal == null or balanceTotal.signum() == 0}" class="nx-badge nx-badge-neutral">Al día</span>
                 </div>
-
-                <!-- Detalle de pagadores y fecha -->
-                <div class="expense-card-detail"
-                     th:with="pagos=${pagosPorGasto.get(gasto.id)}">
-                    <!-- Si tiene un único pagador -->
-                    <span th:if="${pagos != null and pagos.size() == 1}">
-                        Pagó <span th:text="${pagos[0].usuario.name}">Usuario</span>
-                    </span>
-
-                    <!-- Si tiene varios pagadores -->
-                    <span th:if="${pagos != null and pagos.size() > 1}">
-                        Pagaron
-                        <span th:each="p, iterStat : ${pagos}">
-                            <span th:text="${p.usuario.name} + ' ($' + ${#numbers.formatDecimal(p.monto, 1, 'POINT', 0, 'COMMA')} + ')'"></span><span th:if="${!iterStat.last}">, </span>
-                        </span>
-                    </span>
-
-                    <!-- Fecha -->
-                    <span>· <span th:text="${gasto.fecha}">00/00/0000</span></span>
+                <div class="nx-hero-value nx-money"
+                     th:text="${balanceTotal == null or balanceTotal.signum() == 0 ? '$0 COP' : ((balanceTotal.signum() > 0 ? '+' : '-') + '$' + #numbers.formatDecimal(balanceTotal.abs(), 1, 'POINT', 0, 'COMMA') + ' COP')}">
+                    $0 COP
                 </div>
+                <div class="nx-hero-caption">Balance neto considerando gastos y liquidaciones confirmadas.</div>
             </article>
+
+            <article class="nx-hero-card">
+                <div class="nx-hero-label"><span>Gastos registrados</span></div>
+                <div class="nx-hero-value nx-money" th:text="${#lists.size(gastos)}">0</div>
+                <div class="nx-hero-caption">Operaciones confirmadas en el historial del grupo.</div>
+            </article>
+
+            <article class="nx-hero-card">
+                <div class="nx-hero-label"><span>Liquidaciones</span></div>
+                <div class="nx-hero-value nx-money" th:text="${liquidaciones != null ? #lists.size(liquidaciones) : 0}">0</div>
+                <div class="nx-hero-caption">Pagos registrados entre miembros del grupo.</div>
+            </article>
+        </section>
+
+        <!-- Distribución de 2 zonas -->
+        <div class="nx-two-zone">
+            <!-- Zona Principal: Historial de gastos -->
+            <section class="nx-card" aria-labelledby="tituloHistorialGastos">
+                <div class="nx-card-header">
+                    <div>
+                        <h2 id="tituloHistorialGastos" class="nx-card-title">Historial de gastos</h2>
+                        <p class="nx-card-subtitle">Detalle de aportes por pagador y monto total en pesos COP.</p>
+                    </div>
+                    <a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}" class="nx-btn nx-btn-primary nx-btn-sm">+ Nuevo gasto</a>
+                </div>
+
+                <div th:if="${#lists.isEmpty(gastos)}" class="nx-empty-state">
+                    <h3 class="nx-empty-title">Aún no hay gastos en este grupo</h3>
+                    <p class="nx-empty-desc">Registra el primer gasto compartido para calcular automáticamente quién debe a quién.</p>
+                    <a th:href="@{/grupo/{id}/gasto/nuevo(id=${grupo.id})}" class="nx-btn nx-btn-primary">Agregar primer gasto</a>
+                </div>
+
+                <div th:unless="${#lists.isEmpty(gastos)}">
+                    <!-- Tabla escritorio -->
+                    <div class="nx-table-wrap nx-desktop-only-table">
+                        <table class="nx-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Concepto</th>
+                                    <th>Pagado por</th>
+                                    <th class="nx-text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="gasto : ${gastos}">
+                                    <td class="nx-hint" style="white-space: nowrap;"
+                                        th:text="${gasto.fecha != null} ? ${#temporals.format(gasto.fecha, 'dd/MM/yyyy')} : '-'">
+                                        01/01/2026
+                                    </td>
+                                    <td>
+                                        <strong th:text="${gasto.descripcion}">Concepto</strong>
+                                    </td>
+                                    <td>
+                                        <div class="nx-stack-sm" style="gap: 4px;" th:if="${pagosPorGasto != null and pagosPorGasto[gasto.id] != null}">
+                                            <div th:each="pago : ${pagosPorGasto[gasto.id]}" class="nx-hint" style="color: var(--nx-ink);">
+                                                <span th:text="${pago.usuario.name}">Pagador</span>:
+                                                <span class="nx-money" th:text="${'$' + #numbers.formatDecimal(pago.monto, 1, 'POINT', 0, 'COMMA')}">$0</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="nx-text-right">
+                                        <strong class="nx-money"
+                                                th:text="${'$' + #numbers.formatDecimal(gasto.monto, 1, 'POINT', 0, 'COMMA') + ' COP'}">
+                                            $0 COP
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tarjetas móviles (<680px) -->
+                    <div class="nx-card-body nx-mobile-only-cards">
+                        <article th:each="gasto : ${gastos}" class="nx-card nx-card-padded" style="padding: 14px;">
+                            <div class="nx-row-between">
+                                <strong th:text="${gasto.descripcion}">Concepto</strong>
+                                <strong class="nx-money" th:text="${'$' + #numbers.formatDecimal(gasto.monto, 1, 'POINT', 0, 'COMMA')}">$0</strong>
+                            </div>
+                            <div class="nx-hint" style="margin-top: 4px;"
+                                 th:text="${gasto.fecha != null} ? ${#temporals.format(gasto.fecha, 'dd/MM/yyyy')} : '-'">01/01/2026</div>
+                            <div class="nx-hint" style="margin-top: 8px;" th:if="${pagosPorGasto != null and pagosPorGasto[gasto.id] != null}">
+                                <span th:each="pago, iter : ${pagosPorGasto[gasto.id]}">
+                                    <span th:text="${pago.usuario.name + ' ($' + #numbers.formatDecimal(pago.monto, 1, 'POINT', 0, 'COMMA') + ')'}"></span><span th:if="${!iter.last}">, </span>
+                                </span>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Columna Lateral Sticky: Saldos por persona, Liquidaciones y Miembros -->
+            <aside class="nx-sticky-aside">
+                <!-- Saldos persona a persona -->
+                <section class="nx-card" aria-labelledby="tituloDeudasGrupo">
+                    <div class="nx-card-header">
+                        <h2 id="tituloDeudasGrupo" class="nx-card-title">Deudas por persona</h2>
+                    </div>
+                    <div class="nx-card-body">
+                        <div th:if="${#lists.isEmpty(deudas)}" class="nx-alert nx-alert-success" style="margin-bottom: 0;">
+                            Estás al día con todos los miembros de este grupo.
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(deudas)}" class="nx-stack-sm">
+                            <div th:each="d : ${deudas}"
+                                 class="nx-card nx-card-padded"
+                                 style="padding: 12px 14px; background: var(--nx-surface-muted);">
+                                <div class="nx-row-between">
+                                    <div>
+                                        <strong th:text="${d.otraPersona.name}">Persona</strong>
+                                        <div class="nx-hint" th:text="${d.leDebo() ? 'Le debes' : 'Te debe'}">Estado</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div class="nx-money"
+                                             style="font-weight: 800;"
+                                             th:classappend="${d.leDebo() ? ' nx-text-negative' : ' nx-text-positive'}"
+                                             th:text="${'$' + #numbers.formatDecimal(d.monto.abs(), 1, 'POINT', 0, 'COMMA') + ' COP'}">
+                                            $0 COP
+                                        </div>
+                                        <a th:if="${d.leDebo()}"
+                                           th:href="@{/grupo/{id}/liquidar(id=${grupo.id}, receptorId=${d.otraPersona.id})}"
+                                           class="nx-btn nx-btn-primary nx-btn-sm"
+                                           style="margin-top: 6px;">
+                                            Liquidar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Liquidaciones del grupo -->
+                <section class="nx-card" aria-labelledby="tituloLiquidacionesGrupo">
+                    <div class="nx-card-header">
+                        <h2 id="tituloLiquidacionesGrupo" class="nx-card-title">Liquidaciones</h2>
+                        <a th:href="@{/grupo/{id}/liquidar(id=${grupo.id})}" class="nx-btn nx-btn-secondary nx-btn-sm">+ Registrar</a>
+                    </div>
+                    <div class="nx-card-body">
+                        <div th:if="${liquidaciones == null or #lists.isEmpty(liquidaciones)}" class="nx-hint">
+                            No hay liquidaciones registradas en este grupo todavía.
+                        </div>
+
+                        <div th:unless="${liquidaciones == null or #lists.isEmpty(liquidaciones)}" class="nx-stack-sm">
+                            <article th:each="liq : ${liquidaciones}"
+                                     class="nx-card nx-card-padded"
+                                     style="padding: 12px 14px; background: var(--nx-surface-muted);">
+                                <div class="nx-row-between" style="margin-bottom: 6px;">
+                                    <span class="nx-text-sm" style="font-weight: 600;">
+                                        <span th:text="${liq.pagador.name}">Pagador</span> &rarr; <span th:text="${liq.receptor.name}">Receptor</span>
+                                    </span>
+                                    <span class="nx-badge"
+                                          th:classappend="${liq.estado.name() == 'CONFIRMADA' ? ' nx-badge-emerald' : (liq.estado.name() == 'PENDIENTE' ? ' nx-badge-amber' : ' nx-badge-danger')}"
+                                          th:text="${liq.estado}">PENDIENTE</span>
+                                </div>
+
+                                <div class="nx-row-between">
+                                    <strong class="nx-money" th:text="${'$' + #numbers.formatDecimal(liq.monto, 1, 'POINT', 0, 'COMMA') + ' COP'}">$0 COP</strong>
+                                    <span class="nx-hint" th:text="${liq.metodoPago}">EFECTIVO</span>
+                                </div>
+
+                                <p th:if="${liq.nota != null and !#strings.isEmpty(liq.nota)}"
+                                   class="nx-hint"
+                                   style="margin: 6px 0 0;"
+                                   th:text="${liq.nota}">Nota</p>
+
+                                <div th:if="${liq.estado.name() == 'PENDIENTE'}"
+                                     style="display:flex; gap:8px; margin-top: 10px; flex-wrap: wrap;">
+                                    <form th:if="${liq.receptor.id == usuarioActualId}"
+                                          th:action="@{/liquidaciones/{id}/confirmar(id=${liq.id})}"
+                                          method="post">
+                                        <button type="submit" class="nx-btn nx-btn-primary nx-btn-sm">Confirmar</button>
+                                    </form>
+                                    <form th:if="${liq.receptor.id == usuarioActualId}"
+                                          th:action="@{/liquidaciones/{id}/rechazar(id=${liq.id})}"
+                                          method="post">
+                                        <button type="submit" class="nx-btn nx-btn-danger nx-btn-sm">Rechazar</button>
+                                    </form>
+                                    <form th:if="${liq.pagador.id == usuarioActualId}"
+                                          th:action="@{/liquidaciones/{id}/cancelar(id=${liq.id})}"
+                                          method="post">
+                                        <button type="submit" class="nx-btn nx-btn-secondary nx-btn-sm">Cancelar</button>
+                                    </form>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Miembros activos -->
+                <section class="nx-card" aria-labelledby="tituloMiembrosGrupo">
+                    <div class="nx-card-header">
+                        <h2 id="tituloMiembrosGrupo" class="nx-card-title">
+                            Miembros (<span th:text="${#lists.size(miembros)}">0</span>)
+                        </h2>
+                    </div>
+                    <div class="nx-card-body">
+                        <div class="nx-member-chips">
+                            <span th:each="m : ${miembros}" class="nx-chip">
+                                <span class="nx-chip-avatar"
+                                      th:text="${m.usuario.name != null and !#strings.isEmpty(m.usuario.name)} ? ${#strings.toUpperCase(#strings.substring(m.usuario.name, 0, 1))} : 'U'">U</span>
+                                <span th:text="${m.usuario.name}">Miembro</span>
+                                <span th:if="${grupo.creador != null and m.usuario.id == grupo.creador.id}"
+                                      class="nx-badge nx-badge-info"
+                                      style="padding: 1px 6px; font-size: 0.65rem;">Creador</span>
+                            </span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
         </div>
-    </section>
-
-</main>
-
+    </div>
 </body>
+
 </html>

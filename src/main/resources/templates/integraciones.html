@@ -1,69 +1,106 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
-<head th:replace="~{fragments/nexus-layout :: head('Integraciones · NEXUS')}"></head>
-<body>
-<div th:replace="~{fragments/nexus-layout :: topnav('integraciones')}"></div>
-<div class="app-container">
-    <header class="top-bar">
-        <a th:href="@{/inicio}" class="btn-back" aria-label="Volver al inicio">←</a>
-        <h1 class="top-bar-title">Integraciones</h1>
-        <span style="width: 38px;"></span>
-    </header>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 
-    <main class="page-content">
-        <div th:if="${mensajeIntegracion}" class="toast-card" style="margin-bottom: 16px;" th:text="${mensajeIntegracion}">
-            Mensaje
+<head th:replace="~{fragments/nexus-layout :: nexusHead('Integraciones — NEXUS')}"></head>
+
+<body th:replace="~{fragments/nexus-layout :: appBody('integraciones', 'Integraciones y canales', null, null, ~{::#nexus-page-content})}">
+    <div id="nexus-page-content">
+
+        <div th:if="${mensajeIntegracion != null}" class="nx-alert nx-alert-success" role="status" th:text="${mensajeIntegracion}">
+            Integración actualizada.
         </div>
 
-        <section class="section-block" style="display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 class="section-block-title" style="font-size: 16px; margin: 0;">Telegram Bot API</h2>
-                <span style="font-size: 12px; font-weight: 600;"
-                      th:text="${telegramHabilitado ? 'Proveedor activo' : 'Proveedor deshabilitado (modo local)'}">
-                    Estado
-                </span>
-            </div>
-
-            <div th:if="${cuentaTelegram != null}" class="expense-card" style="display: flex; flex-direction: column; gap: 8px;">
-                <strong>Cuenta vinculada</strong>
-                <span style="font-size: 13px;" th:text="${'ID externo Telegram: ' + cuentaTelegram.identificadorExterno}">ID</span>
-                <span style="font-size: 12px; color: #5C6B66;"
-                      th:text="${'Vinculada el: ' + #temporals.format(cuentaTelegram.fechaVinculacion, 'dd/MM/yyyy HH:mm')}">Fecha</span>
-                <form th:action="@{/integraciones/telegram/desvincular}" method="post" style="margin-top: 6px;">
-                    <button type="submit" class="btn-quick btn-quick-secondary" style="height: 40px; width: 100%;">
-                        Desvincular Telegram
-                    </button>
-                </form>
-            </div>
-
-            <div th:if="${cuentaTelegram == null}" style="display: flex; flex-direction: column; gap: 10px;">
-                <p class="section-block-desc" style="font-size: 13px; margin: 0;">
-                    Genera un código temporal de un solo uso (expira en 10 minutos) y envíalo en chat privado al bot con <code>/vincular &lt;CODIGO&gt;</code>.
+        <section class="nx-page-header">
+            <div>
+                <h1 class="nx-page-title">Integraciones y canales</h1>
+                <p class="nx-page-subtitle">
+                    Conecta tu bot privado de Telegram para consultar saldos y crear borradores sin comprometer la seguridad de tu cuenta.
                 </p>
-
-                <form th:action="@{/integraciones/telegram/codigo}" method="post">
-                    <button type="submit" class="btn-submit" style="height: 46px; width: 100%;">
-                        Vincular Telegram
-                    </button>
-                </form>
             </div>
-
-            <div th:if="${codigoTemporal}" class="expense-card" style="display: flex; flex-direction: column; gap: 8px;">
-                <span>Tu código temporal de un solo uso:</span>
-                <strong style="font-size: 20px; letter-spacing: 2px;" th:text="${codigoTemporal}">NX-XXXXXXXX</strong>
-                <span style="font-size: 12px;">Envía en chat privado: <code th:text="${'/vincular ' + codigoTemporal}">/vincular</code></span>
-                <a th:if="${deepLink}" th:href="${deepLink}" target="_blank" rel="noopener noreferrer"
-                   class="btn-quick btn-quick-primary" style="height: 40px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
-                    Abrir bot en Telegram
-                </a>
-            </div>
-
-            <p style="font-size: 12px; color: #5C6B66; margin: 0;"
-               th:text="${groupsEnabled ? 'Integración grupal habilitada: usa /vincular_grupo <ID> siendo administrador.' : 'Integración grupal deshabilitada.'}">
-                Grupos
-            </p>
         </section>
-    </main>
-</div>
+
+        <div class="nx-two-zone-even">
+            <!-- Panel principal Telegram -->
+            <section class="nx-card">
+                <div class="nx-card-header">
+                    <div>
+                        <h2 class="nx-card-title">Bot privado de Telegram</h2>
+                        <p class="nx-card-subtitle"
+                           th:text="${botUsername != null and !#strings.isEmpty(botUsername)} ? ('Bot configurado: ' + ${botUsername}) : 'Canal privado NEXUS por código temporal'">
+                            Bot configurado
+                        </p>
+                    </div>
+                    <span th:if="${cuentaTelegram != null}" class="nx-badge nx-badge-emerald">Vinculado</span>
+                    <span th:unless="${cuentaTelegram != null}" class="nx-badge nx-badge-amber">Sin vincular</span>
+                </div>
+
+                <div class="nx-card-body nx-stack-md">
+                    <div th:if="${!telegramHabilitado}" class="nx-alert nx-alert-warning" style="margin-bottom:0;">
+                        El cliente de Telegram se encuentra deshabilitado en este entorno; puedes seguir operando al 100% desde la aplicación web.
+                    </div>
+
+                    <div th:if="${cuentaTelegram != null}" class="nx-card nx-card-padded" style="background: var(--nx-success-bg); border-color: var(--nx-success-border);">
+                        <div class="nx-row-between">
+                            <div>
+                                <strong>Cuenta de Telegram conectada</strong>
+                                <div class="nx-hint" th:if="${cuentaTelegram.identificadorExterno != null}" th:text="'ID chat Telegram: ' + ${cuentaTelegram.identificadorExterno}">ID</div>
+                                <div class="nx-hint" th:if="${cuentaTelegram.fechaVinculacion != null}" th:text="'Vinculada el ' + ${#temporals.format(cuentaTelegram.fechaVinculacion, 'dd/MM/yyyy HH:mm')}">Fecha</div>
+                            </div>
+                            <form th:action="@{/integraciones/telegram/desvincular}" method="post">
+                                <button type="submit" class="nx-btn nx-btn-danger nx-btn-sm">Desvincular Telegram</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div th:if="${codigoTemporal != null}" class="nx-card nx-card-padded" style="background: var(--nx-midnight); color: #FFFFFF;">
+                        <span class="nx-hint" style="color: #CBD5E1;">Código temporal de vinculación (expira en minutos)</span>
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; flex-wrap:wrap;">
+                            <code class="nx-mono" style="font-size: 1.4rem; font-weight: 800; color: var(--nx-mint);" th:text="${codigoTemporal}">NX-000000</code>
+                            <a th:if="${deepLink != null}"
+                               th:href="${deepLink}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="nx-btn nx-btn-emerald nx-btn-sm">
+                                Abrir en Telegram
+                            </a>
+                        </div>
+                        <p class="nx-hint" style="color:#94A3B8; margin: 10px 0 0;">
+                            Envía en el chat del bot: <code class="nx-mono" style="color:#FFFFFF;" th:text="'/vincular ' + ${codigoTemporal}">/vincular CODIGO</code>
+                        </p>
+                    </div>
+
+                    <form th:action="@{/integraciones/telegram/codigo}" method="post">
+                        <button type="submit" class="nx-btn nx-btn-primary">
+                            <span th:text="${cuentaTelegram != null} ? 'Generar nuevo código de revinculación' : 'Generar código temporal de vinculación'">
+                                Generar código temporal
+                            </span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Columna lateral de guía y política -->
+            <aside class="nx-sticky-aside">
+                <section class="nx-card">
+                    <div class="nx-card-header">
+                        <h2 class="nx-card-title">Seguridad y alcance</h2>
+                    </div>
+                    <div class="nx-card-body nx-stack-sm">
+                        <p class="nx-hint" style="margin:0;">
+                            <strong>1. Solo chat privado:</strong> los comandos y borradores operan en conversación directa 1-a-1 con tu cuenta.
+                        </p>
+                        <p class="nx-hint" style="margin:0;">
+                            <strong>2. Chats grupales en Telegram:</strong>
+                            <span th:text="${groupsEnabled} ? 'Habilitado por configuración.' : 'Deshabilitado por privacidad en esta versión.'">Deshabilitado</span>
+                        </p>
+                        <p class="nx-hint" style="margin:0;">
+                            <strong>3. Control humano:</strong> los gastos enviados por Telegram crean borradores pendientes en el Asistente NEXUS antes de modificar balances.
+                        </p>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
 </body>
+
 </html>

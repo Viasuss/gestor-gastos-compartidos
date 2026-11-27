@@ -1,92 +1,160 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
-<head th:replace="~{fragments/nexus-layout :: head('Registrar liquidación · NEXUS')}"></head>
-<body>
-<div th:replace="~{fragments/nexus-layout :: topnav('grupos')}"></div>
-<div class="app-container">
-    <header class="top-bar">
-        <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="btn-back" aria-label="Volver al grupo">←</a>
-        <h1 class="top-bar-title">Registrar liquidación</h1>
-        <span style="width: 38px;"></span>
-    </header>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 
-    <main class="page-content">
-        <div th:if="${errorMensaje}" class="alert-error" style="margin-bottom: 16px;" th:text="${errorMensaje}">
-            Error al registrar liquidación
+<head th:replace="~{fragments/nexus-layout :: nexusHead('Registrar liquidación — ' + ${grupo.name} + ' — NEXUS')}"></head>
+
+<body th:replace="~{fragments/nexus-layout :: appBody('grupos', 'Registrar liquidación', ${grupo.name}, '/grupo/' + ${grupo.id}, ~{::#nexus-page-content})}">
+    <div id="nexus-page-content">
+
+        <div th:if="${errorMensaje != null}" class="nx-alert nx-alert-error" role="alert" th:text="${errorMensaje}">
+            Error de validación en liquidación.
         </div>
 
-        <div th:if="${#lists.isEmpty(deudasPorPagar)}" class="empty-state">
-            <p class="empty-state-title">No tienes deudas pendientes en este grupo</p>
-            <p class="empty-state-desc">Estás a paz y salvo con todos los integrantes.</p>
-            <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="btn-submit" style="margin-top: 16px; display: inline-flex; align-items: center; justify-content: center;">
-                Volver al grupo
-            </a>
+        <section class="nx-page-header">
+            <div>
+                <h1 class="nx-page-title">Registrar liquidación</h1>
+                <p class="nx-page-subtitle">
+                    Registra un pago hacia otro integrante de <strong th:text="${grupo.name}">Grupo</strong>.
+                </p>
+            </div>
+            <div class="nx-page-actions">
+                <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="nx-btn nx-btn-secondary">Volver al grupo</a>
+            </div>
+        </section>
+
+        <div class="nx-two-zone-even">
+            <!-- Formulario de liquidación -->
+            <section class="nx-card">
+                <div class="nx-card-header">
+                    <h2 class="nx-card-title">Detalle del pago</h2>
+                </div>
+                <div class="nx-card-body">
+                    <div th:if="${#lists.isEmpty(deudasPorPagar)}" class="nx-empty-state">
+                        <h3 class="nx-empty-title">No tienes deudas pendientes en este grupo</h3>
+                        <p class="nx-empty-desc">
+                            Estás al día con todos los miembros de <span th:text="${grupo.name}">este grupo</span>.
+                        </p>
+                        <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="nx-btn nx-btn-primary">Volver al grupo</a>
+                    </div>
+
+                    <form th:unless="${#lists.isEmpty(deudasPorPagar)}"
+                          id="formLiquidar"
+                          th:action="@{/grupo/{id}/liquidar(id=${grupo.id})}"
+                          method="post">
+                        <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
+
+                        <div class="nx-form-group">
+                            <label for="receptorId" class="nx-label">¿A quién le realizaste el pago?</label>
+                            <select id="receptorId" name="receptorId" class="nx-select" required>
+                                <option th:each="deuda : ${deudasPorPagar}"
+                                        th:value="${deuda.otraPersona.id}"
+                                        th:selected="${(prevReceptorId != null and prevReceptorId == deuda.otraPersona.id) or (receptorPreseleccionado != null and receptorPreseleccionado == deuda.otraPersona.id)}"
+                                        th:attr="data-deuda=${#numbers.formatDecimal(deuda.monto.abs(), 1, 0)}"
+                                        th:text="${deuda.otraPersona.name + ' (debes $' + #numbers.formatDecimal(deuda.monto.abs(), 1, 'POINT', 0, 'COMMA') + ' COP)'}">
+                                    Persona
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="nx-form-row-2">
+                            <div class="nx-form-group">
+                                <label for="monto" class="nx-label">Monto pagado (COP)</label>
+                                <input type="text"
+                                       id="monto"
+                                       name="monto"
+                                       class="nx-input nx-money"
+                                       inputmode="numeric"
+                                       th:value="${prevMonto}"
+                                       placeholder="Ej: 45000"
+                                       required>
+                                <span class="nx-hint">Monto entero en pesos colombianos.</span>
+                            </div>
+
+                            <div class="nx-form-group">
+                                <label for="metodoPago" class="nx-label">Método de pago</label>
+                                <select id="metodoPago" name="metodoPago" class="nx-select" required>
+                                    <option th:each="metodo : ${metodosPago}"
+                                            th:value="${metodo}"
+                                            th:selected="${prevMetodo != null and prevMetodo == metodo}"
+                                            th:text="${metodo}">
+                                        EFECTIVO
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="nx-form-group">
+                            <label for="nota" class="nx-label">Nota o referencia (opcional)</label>
+                            <input type="text"
+                                   id="nota"
+                                   name="nota"
+                                   class="nx-input"
+                                   maxlength="180"
+                                   th:value="${prevNota}"
+                                   placeholder="Ej: Transferencia Nequi, comprobante #123">
+                        </div>
+
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 8px;">
+                            <button type="submit" class="nx-btn nx-btn-primary">
+                                Registrar liquidación
+                            </button>
+                            <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="nx-btn nx-btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Columna de aclaración financiera -->
+            <aside class="nx-sticky-aside">
+                <section class="nx-card">
+                    <div class="nx-card-header">
+                        <h2 class="nx-card-title">¿Cómo funciona?</h2>
+                    </div>
+                    <div class="nx-card-body nx-stack-sm">
+                        <div class="nx-alert nx-alert-info" style="margin-bottom: 4px;">
+                            NEXUS registra y audita las liquidaciones del grupo, pero no ejecuta transferencias bancarias ni movimientos de dinero reales.
+                        </div>
+                        <p class="nx-hint" style="margin:0;">
+                            1. Realiza primero el pago por el medio acordado (efectivo, Nequi, transferencia u otro).
+                        </p>
+                        <p class="nx-hint" style="margin:0;">
+                            2. Registra el monto aquí: quedará en estado <strong>PENDIENTE</strong> hasta que la persona receptora lo confirme.
+                        </p>
+                        <p class="nx-hint" style="margin:0;">
+                            3. Una vez confirmado, el saldo de ambos se actualizará automáticamente.
+                        </p>
+                    </div>
+                </section>
+            </aside>
         </div>
 
-        <form th:if="${!#lists.isEmpty(deudasPorPagar)}"
-              th:action="@{/grupo/{id}/liquidar(id=${grupo.id})}"
-              method="post"
-              class="section-block"
-              style="display: flex; flex-direction: column; gap: 16px;">
+        <script>
+            (function () {
+                const select = document.getElementById('receptorId');
+                const monto = document.getElementById('monto');
+                if (!select || !monto) return;
 
-            <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
+                function sugMonto() {
+                    if (monto.value && monto.value.trim() !== '') return;
+                    const opt = select.options[select.selectedIndex];
+                    if (opt && opt.dataset.deuda) {
+                        monto.value = opt.dataset.deuda;
+                    }
+                }
 
-            <div>
-                <label for="receptorId" class="field-label">¿A quién le pagaste?</label>
-                <select id="receptorId" name="receptorId" class="input-field" required>
-                    <option th:each="d : ${deudasPorPagar}"
-                            th:value="${d.otraPersona.id}"
-                            th:selected="${receptorPreseleccionado != null and receptorPreseleccionado == d.otraPersona.id}"
-                            th:text="${d.otraPersona.name + ' (Debes $' + #numbers.formatInteger(d.monto.abs(), 1, 'POINT') + ')'}">
-                        Persona
-                    </option>
-                </select>
-            </div>
-
-            <div>
-                <label for="monto" class="field-label">Monto pagado (COP)</label>
-                <input id="monto"
-                       type="text"
-                       name="monto"
-                       class="input-field"
-                       placeholder="Ej: 50.000"
-                       inputmode="numeric"
-                       th:value="${prevMonto}"
-                       required>
-            </div>
-
-            <div>
-                <label for="metodoPago" class="field-label">Método informativo</label>
-                <select id="metodoPago" name="metodoPago" class="input-field" required>
-                    <option th:each="m : ${metodosPago}"
-                            th:value="${m}"
-                            th:selected="${prevMetodo != null and prevMetodo == m}"
-                            th:text="${m}">
-                        NEQUI
-                    </option>
-                </select>
-            </div>
-
-            <div>
-                <label for="nota" class="field-label">Nota opcional</label>
-                <input id="nota"
-                       type="text"
-                       name="nota"
-                       class="input-field"
-                       maxlength="250"
-                       placeholder="Ej: Transferencia Nequi"
-                       th:value="${prevNota}">
-            </div>
-
-            <p class="section-block-desc" style="font-size: 12px;">
-                El balance se actualizará únicamente cuando el receptor confirme la recepción del pago.
-            </p>
-
-            <button type="submit" class="btn-submit" style="height: 50px;">
-                Enviar solicitud de liquidación
-            </button>
-        </form>
-    </main>
-</div>
+                select.addEventListener('change', () => {
+                    const opt = select.options[select.selectedIndex];
+                    if (opt && opt.dataset.deuda && !monto.dataset.edited) {
+                        monto.value = opt.dataset.deuda;
+                    }
+                });
+                monto.addEventListener('input', () => { monto.dataset.edited = 'true'; });
+                sugMonto();
+            })();
+        </script>
+    </div>
 </body>
+
 </html>

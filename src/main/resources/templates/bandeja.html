@@ -1,148 +1,247 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
-<head th:replace="~{fragments/nexus-layout :: head('Asistente NEXUS · Bandeja Inteligente')}"></head>
-<body>
-<div th:replace="~{fragments/nexus-layout :: topnav('asistente')}"></div>
-<div class="app-container">
-    <header class="top-bar">
-        <a th:href="@{/inicio}" class="btn-back" aria-label="Volver al inicio">←</a>
-        <h1 class="top-bar-title">Asistente NEXUS</h1>
-        <span style="width: 38px;"></span>
-    </header>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 
-    <main class="page-content">
-        <div th:if="${errorBandeja}" class="alert-error" style="margin-bottom: 16px;" th:text="${errorBandeja}">
-            Error
+<head th:replace="~{fragments/nexus-layout :: nexusHead('Asistente NEXUS — Borradores e IA')}"></head>
+
+<body th:replace="~{fragments/nexus-layout :: appBody('asistente', 'Asistente NEXUS', null, null, ~{::#nexus-page-content})}">
+    <div id="nexus-page-content">
+
+        <div th:if="${errorBandeja != null}" class="nx-alert nx-alert-error" role="alert" th:text="${errorBandeja}">
+            Error al procesar el borrador.
+        </div>
+        <div th:if="${param.interpretado != null}" class="nx-alert nx-alert-success" role="status">
+            Instrucción interpretada y guardada como borrador pendiente. Revísala antes de confirmar.
+        </div>
+        <div th:if="${param.descartado != null}" class="nx-alert nx-alert-info" role="status">
+            Borrador descartado. No se modificó ningún saldo financiero.
         </div>
 
-        <section class="section-block" style="margin-bottom: 20px;">
-            <h2 class="section-block-title" style="font-size: 16px;">Interpretar gasto en lenguaje natural</h2>
-            <p class="section-block-desc" style="font-size: 12px;"
-               th:text="${groqDisponible ? 'Motor activo: Reglas locales + Groq Free (sujeto a confirmación humana).' : 'Motor activo: Reglas locales deterministas (Groq deshabilitado o sin cuota; operación 100% funcional).'}">
-                Motor activo
-            </p>
-
-            <div th:if="${#lists.isEmpty(misGrupos)}" class="empty-state">
-                <p>Únete o crea un grupo para usar el Asistente NEXUS.</p>
+        <section class="nx-page-header">
+            <div>
+                <h1 class="nx-page-title">Asistente NEXUS</h1>
+                <p class="nx-page-subtitle">
+                    Interpreta gastos en lenguaje natural y confirma cada borrador manualmente antes de afectar tus saldos.
+                </p>
             </div>
-
-            <form th:if="${!#lists.isEmpty(misGrupos)}"
-                  th:action="@{/asistente/interpretar}"
-                  method="post"
-                  style="display: flex; flex-direction: column; gap: 12px;">
-                <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
-
-                <div>
-                    <label for="grupoId" class="field-label">Grupo</label>
-                    <select id="grupoId" name="grupoId" class="input-field" required>
-                        <option th:each="mg : ${misGrupos}"
-                                th:value="${mg.grupo.id}"
-                                th:text="${mg.grupo.name}">
-                            Grupo
-                        </option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="texto" class="field-label">Instrucción</label>
-                    <textarea id="texto"
-                              name="texto"
-                              class="input-field"
-                              rows="3"
-                              placeholder="Ej: Pagué 120 lucas del internet del apartamento. Divídelo entre todos"
-                              required></textarea>
-                </div>
-
-                <button type="submit" class="btn-submit" style="height: 46px;">
-                    Interpretar (crea borrador)
-                </button>
-            </form>
+            <div>
+                <span th:if="${groqDisponible}" class="nx-badge nx-badge-emerald">IA Groq activa + respaldo local</span>
+                <span th:unless="${groqDisponible}" class="nx-badge nx-badge-neutral">Motor determinista local activo</span>
+            </div>
         </section>
 
-        <section class="section-block">
-            <h2 class="section-block-title" style="font-size: 16px;">Bandeja de borradores</h2>
-
-            <div th:if="${#lists.isEmpty(borradores)}" class="empty-state">
-                No tienes borradores registrados todavía.
-            </div>
-
-            <div th:each="b : ${borradores}" class="expense-card" style="margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; padding: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <strong style="font-size: 15px;" th:text="${b.grupo.name + ' · ' + b.concepto}">Grupo · Concepto</strong>
-                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                        <span class="nexus-badge nexus-badge-neutral"
-                              th:text="${b.origen == 'TELEGRAM' ? 'Telegram' : 'Web'}">Web</span>
-                        <span class="nexus-badge"
-                              th:classappend="${b.estado.name() == 'CONFIRMADO' ? ' nexus-badge-success' : (b.estado.name() == 'REQUIERE_ACLARACION' ? ' nexus-badge-warning' : ' nexus-badge-neutral')}"
-                              th:text="${b.estado.name() == 'REQUIERE_ACLARACION' ? 'Requiere aclaración' : (b.estado.name() == 'PENDIENTE' ? 'Pendiente' : (b.estado.name() == 'CONFIRMADO' ? 'Confirmado' : (b.estado.name() == 'DESCARTADO' ? 'Descartado' : b.estado.name())))}">Estado</span>
-                        <span class="nexus-badge nexus-badge-neutral"
-                              th:text="${b.proveedorUtilizado == 'LOCAL_RULES' ? 'Interpretación local' : (b.proveedorUtilizado == 'GROQ' ? 'Interpretación con IA' : b.proveedorUtilizado)}">Motor</span>
+        <div class="nx-two-zone-even">
+            <!-- Columna izquierda: Generador de borradores -->
+            <section class="nx-card">
+                <div class="nx-card-header">
+                    <div>
+                        <h2 class="nx-card-title">Nueva instrucción financiera</h2>
+                        <p class="nx-card-subtitle">Escribe en español cotidiano qué gasto deseas preparar para revisión.</p>
                     </div>
                 </div>
+                <div class="nx-card-body">
+                    <div th:if="${#lists.isEmpty(misGrupos)}" class="nx-empty-state">
+                        <h3 class="nx-empty-title">Necesitas un grupo activo primero</h3>
+                        <p class="nx-empty-desc">
+                            El Asistente NEXUS prepara borradores asociados a uno de tus grupos para validar miembros y saldos.
+                        </p>
+                        <a th:href="@{/grupo/crear}" class="nx-btn nx-btn-primary">Crear mi primer grupo</a>
+                    </div>
 
-                <p style="font-size: 12px; color: #5C6B66; margin: 0;" th:if="${b.mensajeOriginal}" th:text="${'Entrada: ' + b.mensajeOriginal}"></p>
+                    <form th:unless="${#lists.isEmpty(misGrupos)}"
+                          th:action="@{/asistente/interpretar}"
+                          method="post"
+                          class="nx-stack-sm">
+                        <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
 
-                <div th:if="${b.estado.name() == 'PENDIENTE' or b.estado.name() == 'REQUIERE_ACLARACION'}">
-                    <form th:action="@{/bandeja/{id}/confirmar(id=${b.id})}" method="post" style="display: flex; flex-direction: column; gap: 10px;">
-                        <input type="hidden" name="confirmIdempotencyKey" th:value="${'confirm-' + b.id}">
-
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-                            <div>
-                                <label class="field-label">Concepto</label>
-                                <input type="text" name="concepto" class="input-field" th:value="${b.concepto}" maxlength="100" required>
-                            </div>
-                            <div>
-                                <label class="field-label">Monto (COP)</label>
-                                <input type="text" name="montoCop" class="input-field"
-                                       th:value="${b.montoCop != null ? #numbers.formatDecimal(b.montoCop, 1, 0) : ''}"
-                                       placeholder="Ej: 120000" required>
-                            </div>
+                        <div class="nx-form-group">
+                            <label for="grupoId" class="nx-label">Grupo de destino</label>
+                            <select id="grupoId" name="grupoId" class="nx-select" required>
+                                <option th:each="mg : ${misGrupos}"
+                                        th:value="${mg.grupo.id}"
+                                        th:text="${mg.grupo.name}">Grupo</option>
+                            </select>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-                            <div>
-                                <label class="field-label">Fecha</label>
-                                <input type="date" name="fecha" class="input-field" th:value="${b.fechaSugerida}" required>
-                            </div>
-                            <div>
-                                <label class="field-label">Pagador</label>
-                                <select name="pagadorId" class="input-field" required>
-                                    <option th:each="m : ${miembrosPorGrupo[b.grupo.id]}"
-                                            th:value="${m.usuario.id}"
-                                            th:selected="${m.usuario.id == usuarioActualId}"
-                                            th:text="${m.usuario.name}">
-                                        Pagador
-                                    </option>
-                                </select>
-                            </div>
+                        <div class="nx-form-group">
+                            <label for="texto" class="nx-label">Instrucción del gasto</label>
+                            <textarea id="texto"
+                                      name="texto"
+                                      class="nx-textarea"
+                                      maxlength="500"
+                                      placeholder="Ej: Pagué almuerzo por 45000 pesos entre todos"
+                                      required></textarea>
+                            <span class="nx-hint">
+                                Ejemplos: «Compré mercado por 68000», «Uber aeropuerto 35 mil».
+                            </span>
                         </div>
 
-                        <div>
-                            <label class="field-label">Participantes (división igualitaria)</label>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <label th:each="m : ${miembrosPorGrupo[b.grupo.id]}" style="font-size: 13px; display: inline-flex; align-items: center; gap: 4px;">
-                                    <input type="checkbox" name="participantesIds" th:value="${m.usuario.id}" checked>
-                                    <span th:text="${m.usuario.name}">Miembro</span>
-                                </label>
-                            </div>
+                        <div class="nx-alert nx-alert-info" style="margin-bottom: 6px;">
+                            La interpretación automática nunca guarda un gasto definitivo ni modifica balances sin tu confirmación explícita.
                         </div>
 
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button type="submit" class="btn-submit" style="height: 40px; flex: 1;">
-                                Confirmar gasto
-                            </button>
-                        </div>
-                    </form>
-
-                    <form th:action="@{/bandeja/{id}/descartar(id=${b.id})}" method="post" style="margin-top: 6px;">
-                        <button type="submit" class="btn-quick btn-quick-secondary" style="height: 36px; width: 100%;">
-                            Descartar borrador
+                        <button type="submit" class="nx-btn nx-btn-primary nx-btn-block">
+                            Interpretar y crear borrador
                         </button>
                     </form>
                 </div>
-            </div>
-        </section>
-    </main>
-</div>
+            </section>
+
+            <!-- Columna derecha: Bandeja de borradores -->
+            <section class="nx-stack-md" aria-labelledby="tituloBorradores">
+                <div class="nx-row-between">
+                    <h2 id="tituloBorradores" class="nx-card-title">
+                        Bandeja de borradores (<span th:text="${borradores != null ? #lists.size(borradores) : 0}">0</span>)
+                    </h2>
+                </div>
+
+                <div th:if="${borradores == null or #lists.isEmpty(borradores)}" class="nx-card nx-empty-state">
+                    <h3 class="nx-empty-title">No tienes borradores registrados</h3>
+                    <p class="nx-empty-desc">
+                        Envía una instrucción desde este formulario o mediante tu bot privado de Telegram para verla aquí.
+                    </p>
+                </div>
+
+                <article th:each="b : ${borradores}" class="nx-card">
+                    <div class="nx-card-header">
+                        <div>
+                            <strong th:text="${b.grupo != null} ? ${b.grupo.name} : 'Grupo'">Grupo</strong>
+                            <div class="nx-hint"
+                                 th:text="${b.fechaCreacion != null} ? ${#temporals.format(b.fechaCreacion, 'dd/MM/yyyy HH:mm')} : ''">
+                                Fecha
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <!-- Origen canal -->
+                            <span th:if="${b.origen != null and #strings.containsIgnoreCase(b.origen, 'TELEGRAM')}"
+                                  class="nx-badge nx-badge-midnight">Telegram</span>
+                            <span th:unless="${b.origen != null and #strings.containsIgnoreCase(b.origen, 'TELEGRAM')}"
+                                  class="nx-badge nx-badge-neutral">Web</span>
+
+                            <!-- Proveedor -->
+                            <span th:if="${b.proveedorUtilizado == 'GROQ'}"
+                                  class="nx-badge nx-badge-info">Interpretación con IA</span>
+                            <span th:unless="${b.proveedorUtilizado == 'GROQ'}"
+                                  class="nx-badge nx-badge-neutral">Interpretación local</span>
+
+                            <!-- Estado -->
+                            <span th:if="${b.estado.name() == 'PENDIENTE'}"
+                                  class="nx-badge nx-badge-emerald">Pendiente</span>
+                            <span th:if="${b.estado.name() == 'REQUIERE_ACLARACION'}"
+                                  class="nx-badge nx-badge-amber">Requiere aclaración</span>
+                            <span th:if="${b.estado.name() == 'CONFIRMADO'}"
+                                  class="nx-badge nx-badge-info">Confirmado</span>
+                            <span th:if="${b.estado.name() == 'DESCARTADO' or b.estado.name() == 'EXPIRADO'}"
+                                  class="nx-badge nx-badge-danger"
+                                  th:text="${b.estado.name() == 'DESCARTADO'} ? 'Descartado' : 'Expirado'">Estado</span>
+                        </div>
+                    </div>
+
+                    <div class="nx-card-body">
+                        <p th:if="${b.mensajeOriginal != null and !#strings.isEmpty(b.mensajeOriginal)}"
+                           class="nx-hint"
+                           style="margin: 0 0 12px; font-style: italic;"
+                           th:text="'«' + ${b.mensajeOriginal} + '»'">
+                            Mensaje original
+                        </p>
+
+                        <!-- Si está pendiente o requiere aclaración: formulario de edición y confirmación -->
+                        <div th:if="${b.estado.name() == 'PENDIENTE' or b.estado.name() == 'REQUIERE_ACLARACION'}">
+                            <form th:action="@{/bandeja/{id}/confirmar(id=${b.id})}" method="post" class="nx-stack-sm">
+                                <input type="hidden" name="confirmIdempotencyKey" th:value="'confirm-' + ${b.id} + '-' + ${idempotencyKey}">
+
+                                <div class="nx-form-group" style="margin-bottom: 6px;">
+                                    <label th:for="'concepto-' + ${b.id}" class="nx-label">Concepto</label>
+                                    <input type="text"
+                                           th:id="'concepto-' + ${b.id}"
+                                           name="concepto"
+                                           class="nx-input"
+                                           maxlength="100"
+                                           th:value="${b.concepto}"
+                                           required>
+                                </div>
+
+                                <div class="nx-form-row-2">
+                                    <div class="nx-form-group" style="margin-bottom: 6px;">
+                                        <label th:for="'montoCop-' + ${b.id}" class="nx-label">Monto COP</label>
+                                        <input type="text"
+                                               th:id="'montoCop-' + ${b.id}"
+                                               name="montoCop"
+                                               class="nx-input nx-money"
+                                               inputmode="numeric"
+                                               th:value="${b.montoCop != null} ? ${#numbers.formatDecimal(b.montoCop, 1, 0)} : ''"
+                                               placeholder="Ej: 60000"
+                                               required>
+                                    </div>
+
+                                    <div class="nx-form-group" style="margin-bottom: 6px;">
+                                        <label th:for="'fecha-' + ${b.id}" class="nx-label">Fecha</label>
+                                        <input type="date"
+                                               th:id="'fecha-' + ${b.id}"
+                                               name="fecha"
+                                               class="nx-input"
+                                               th:value="${b.fechaSugerida != null} ? ${b.fechaSugerida} : ${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"
+                                               required>
+                                    </div>
+                                </div>
+
+                                <div class="nx-form-group" style="margin-bottom: 6px;"
+                                     th:with="listaMiembros=${miembrosPorGrupo != null and b.grupo != null ? miembrosPorGrupo[b.grupo.id] : null}">
+                                    <label th:for="'pagador-' + ${b.id}" class="nx-label">Pagador</label>
+                                    <select th:id="'pagador-' + ${b.id}" name="pagadorId" class="nx-select" required>
+                                        <option th:each="mg : ${listaMiembros}"
+                                                th:value="${mg.usuario.id}"
+                                                th:selected="${mg.usuario.id == usuarioActualId}"
+                                                th:text="${mg.usuario.name}">Pagador</option>
+                                    </select>
+                                </div>
+
+                                <div class="nx-form-group" style="margin-bottom: 8px;"
+                                     th:with="listaMiembros=${miembrosPorGrupo != null and b.grupo != null ? miembrosPorGrupo[b.grupo.id] : null}">
+                                    <span class="nx-label">Participantes que comparten el gasto</span>
+                                    <div class="nx-member-chips" style="margin-top: 4px;">
+                                        <label th:each="mg : ${listaMiembros}" class="nx-chip" style="cursor:pointer;">
+                                            <input type="checkbox"
+                                                   name="participantesIds"
+                                                   th:value="${mg.usuario.id}"
+                                                   checked
+                                                   style="accent-color: var(--nx-forest);">
+                                            <span th:text="${mg.usuario.name}">Miembro</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                    <button type="submit" class="nx-btn nx-btn-primary nx-btn-sm">
+                                        Confirmar gasto
+                                    </button>
+                                </div>
+                            </form>
+
+                            <form th:action="@{/bandeja/{id}/descartar(id=${b.id})}" method="post" style="margin-top: 8px;">
+                                <button type="submit" class="nx-btn nx-btn-ghost nx-btn-sm nx-text-negative">
+                                    Descartar borrador
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Si ya fue resuelto -->
+                        <div th:unless="${b.estado.name() == 'PENDIENTE' or b.estado.name() == 'REQUIERE_ACLARACION'}"
+                             class="nx-row-between">
+                            <div>
+                                <strong th:text="${b.concepto}">Concepto</strong>
+                                <div class="nx-hint" th:if="${b.fechaSugerida != null}" th:text="${#temporals.format(b.fechaSugerida, 'dd/MM/yyyy')}">Fecha</div>
+                            </div>
+                            <strong class="nx-money"
+                                    th:text="${b.montoCop != null} ? ('$' + #numbers.formatDecimal(b.montoCop, 1, 'POINT', 0, 'COMMA') + ' COP') : 'Sin monto'">
+                                $0 COP
+                            </strong>
+                        </div>
+                    </div>
+                </article>
+            </section>
+        </div>
+    </div>
 </body>
+
 </html>

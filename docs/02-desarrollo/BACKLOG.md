@@ -29,3 +29,8 @@
 - `OBS-TG-02` (**Resuelta**): `/deudas` muestra detalle persona a persona (`deudaService.calcularDeudas`) diferenciado de `/saldo`.
 - `OBS-TG-03` (**Resuelta**): Telegram oculta el botón `✓ Confirmar` en borradores `REQUIERE_ACLARACION` (manteniendo validación backend).
 - `OBS-UI-01..04` (**Resueltas**): `bandeja.html` refinada con etiquetas legibles (`Requiere aclaración`, `Interpretación local`, `Interpretación con IA`), badge de canal (`Telegram`/`Web`) y formato entero `#numbers.formatDecimal(..., 1, 0)`.
+
+### Fase UX 1.0 (`feature/ux-1-0-dashboard-redesign`) — Completada
+- `UX.0–UX.2`: Design System modular (`nexus-tokens.css`, `nexus-shell.css`, `nexus-components.css`, `nexus-views.css`, `nexus.css`, `nexus-shell.js`), App Shell unificado (`fragments/nexus-layout.html`), eliminación de cabecera duplicada en `/inicio` y eliminación de botón simulado de Google Contacts.
+- `UX.3–UX.6`: Reconstrucción integral de las 11 vistas (`inicio`, `mis-grupos`, `grupo`, `crear-grupo`, `agregar-gasto`, `liquidar`, `bandeja`, `integraciones`, `invitaciones`, `login`, `registro`), edición habilitada en `#fecha`, formato entero en borradores y atributo aditivo `totalGruposActivos` en `UsuarioController`.
+- `UX.7–UX.8`: Actualización de Service Worker (`nexus-static-v3`), eliminación de dependencia externa `fonts.googleapis.com`, suite de verificación `UxRedesignVerificationTest` (**69/69** pruebas aprobadas) y validación real en navegador (`1366x768`, `1920x1080`, `1024x768`, `390x844`). Ver `docs/08-informes-de-fase/UX_1_0_REDISENO_INTEGRAL.md`.

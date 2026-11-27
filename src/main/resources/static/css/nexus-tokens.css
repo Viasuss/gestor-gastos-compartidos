@@ -1,0 +1,76 @@
+/* ==========================================================================
+   NEXUS Design System — UX 1.0 Tokens
+   Paleta corporativa Midnight & Mint/Emerald, tipografía offline-safe,
+   escala espacial y accesibilidad WCAG 2.2 AA.
+   ========================================================================== */
+:root {
+    /* Paleta corporativa oficial */
+    --nx-midnight: #050914;
+    --nx-midnight-elevated: #0C1426;
+    --nx-midnight-border: rgba(255, 255, 255, 0.10);
+    --nx-midnight-hover: rgba(255, 255, 255, 0.08);
+    --nx-emerald: #10D99A;
+    --nx-mint: #35F5B1;
+    --nx-forest: #087A59;
+    --nx-forest-hover: #065F46;
+
+    /* Superficies y texto */
+    --nx-cloud: #F4F7F6;
+    --nx-surface: #FFFFFF;
+    --nx-surface-muted: #F8FAFC;
+    --nx-surface-subtle: #F1F5F9;
+    --nx-ink: #0F172A;
+    --nx-slate: #475569;
+    --nx-muted: #64748B;
+    --nx-border: #E2E8F0;
+    --nx-border-strong: #CBD5E1;
+
+    /* Semántica financiera (nunca depender solo del color) */
+    --nx-success: #087A59;
+    --nx-success-bg: #ECFDF5;
+    --nx-success-border: #A7F3D0;
+    --nx-danger: #B93829;
+    --nx-danger-bg: #FEF2F2;
+    --nx-danger-border: #FECACA;
+    --nx-amber: #B45309;
+    --nx-amber-bg: #FFFBEB;
+    --nx-amber-border: #FDE68A;
+    --nx-info: #1D4ED8;
+    --nx-info-bg: #EFF6FF;
+    --nx-info-border: #BFDBFE;
+
+    /* Tipografía offline-first ($0 COP, cero latencia externa) */
+    --nx-font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+    --nx-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+    /* Escala tipográfica */
+    --nx-text-xs: 0.75rem;     /* 12px */
+    --nx-text-sm: 0.875rem;    /* 14px */
+    --nx-text-base: 0.9375rem; /* 15px */
+    --nx-text-lg: 1.0625rem;   /* 17px */
+    --nx-text-xl: 1.25rem;     /* 20px */
+    --nx-text-2xl: 1.5rem;     /* 24px */
+    --nx-text-3xl: 1.875rem;   /* 30px */
+
+    /* Radios y elevación */
+    --nx-radius-sm: 8px;
+    --nx-radius-md: 12px;
+    --nx-radius-lg: 16px;
+    --nx-radius-xl: 20px;
+    --nx-radius-pill: 9999px;
+
+    --nx-shadow-xs: 0 1px 2px rgba(5, 9, 20, 0.05);
+    --nx-shadow-sm: 0 2px 6px rgba(5, 9, 20, 0.06);
+    --nx-shadow-md: 0 8px 24px rgba(5, 9, 20, 0.08);
+    --nx-shadow-lg: 0 18px 42px rgba(5, 9, 20, 0.16);
+
+    /* Dimensiones del App Shell */
+    --nx-sidebar-w: 240px;
+    --nx-sidebar-collapsed-w: 76px;
+    --nx-topbar-h: 68px;
+    --nx-content-max: 1240px;
+
+    /* Anillo de foco accesible WCAG 2.2 AA */
+    --nx-focus-ring: 0 0 0 3px rgba(16, 217, 154, 0.45);
+    --nx-transition-fast: 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}

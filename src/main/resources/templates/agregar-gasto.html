@@ -1,390 +1,399 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/nexus-layout :: head('Agregar gasto · NEXUS')}"></head>
-<body>
-<div th:replace="~{fragments/nexus-layout :: topnav('grupos')}"></div>
 
-<!-- ENCABEZADO -->
-<header class="subpage-header">
-    <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="btn-back" aria-label="Volver">←</a>
-    <h1 class="subpage-title">Agregar gasto</h1>
-</header>
+<head th:replace="~{fragments/nexus-layout :: nexusHead('Agregar gasto — ' + ${grupo.name} + ' — NEXUS')}"></head>
 
-<main class="page-content">
+<body th:replace="~{fragments/nexus-layout :: appBody('grupos', 'Registrar gasto', ${grupo.name}, '/grupo/' + ${grupo.id}, ~{::#nexus-page-content})}">
+    <div id="nexus-page-content">
 
-    <form id="formGasto" th:action="@{/grupo/{id}/gasto(id=${grupo.id})}" method="post" style="display: flex; flex-direction: column; gap: 18px;">
+        <div id="toastContainer" class="toast-container nx-toast-container" aria-live="polite">
+            <div th:if="${param.error != null}" class="toast nx-toast toast-error" role="alert">
+                <span th:switch="${param.error[0]}">
+                    <span th:case="'campos'">Completa el concepto, monto, pagadores y participantes del gasto.</span>
+                    <span th:case="'monto'">Ingresa un monto válido en pesos COP mayor a $0.</span>
+                    <span th:case="'suma'">La suma aportada por los pagadores debe ser exactamente igual al monto total.</span>
+                    <span th:case="'participantes'">Selecciona al menos un participante que comparte el gasto.</span>
+                    <span th:case="'fecha'">Ingresa una fecha válida para el gasto.</span>
+                    <span th:case="*">No se pudo guardar el gasto. Verifica los datos ingresados.</span>
+                </span>
+                <button type="button" class="nx-toast-close" data-dismiss-toast aria-label="Cerrar notificación">&times;</button>
+            </div>
+        </div>
+
+        <section class="nx-page-header">
+            <div>
+                <h1 class="nx-page-title">Registrar gasto en <span th:text="${grupo.name}">Grupo</span></h1>
+                <p class="nx-page-subtitle">
+                    Define quién pagó, cuánto aportó cada persona y entre quiénes se divide el valor en pesos COP.
+                </p>
+            </div>
+            <div class="nx-page-actions">
+                <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="nx-btn nx-btn-secondary">Volver al grupo</a>
+            </div>
+        </section>
+
+        <form id="formGasto" th:action="@{/grupo/{id}/gasto(id=${grupo.id})}" method="post" novalidate>
             <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
 
-        <!-- PILL CON EL NOMBRE DEL GRUPO -->
-        <div style="display: inline-flex; align-items: center; gap: 8px; border-radius: 20px; background-color: #E0F7E8; padding: 6px 14px; width: fit-content;">
-            <span style="font-size: 14px;"></span>
-            <span style="font-size: 13px; font-weight: 700; color: #0F4D3F;" th:text="${grupo.name}">
-                Nombre del grupo
-            </span>
-        </div>
+            <div class="nx-two-zone">
+                <!-- Zona principal del formulario -->
+                <div class="nx-stack-md">
+                    <section class="nx-card">
+                        <div class="nx-card-header">
+                            <h2 class="nx-card-title">Datos del gasto</h2>
+                        </div>
+                        <div class="nx-card-body">
+                            <div class="nx-form-group">
+                                <label for="descripcion" class="nx-label">Concepto o descripción</label>
+                                <input type="text"
+                                       id="descripcion"
+                                       name="descripcion"
+                                       class="nx-input"
+                                       maxlength="100"
+                                       placeholder="Ej: Mercado semanal, Transporte, Cena"
+                                       required>
+                            </div>
 
-        <!-- MENSAJES DE ERROR DEL SERVIDOR -->
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'suma'}">
-            La suma de lo que pagó cada persona no coincide con el monto total del gasto.
-        </div>
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'pagos'}">
-            Revisa los pagadores: cada uno debe ser miembro del grupo y no puede repetirse.
-        </div>
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'pagadores'}">
-            Marca al menos a una persona que pagó.
-        </div>
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'pagomonto'}">
-            Cada pagador marcado debe tener un monto mayor a $0.
-        </div>
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'participantes'}">
-            Elige al menos a una persona para dividir el gasto (todas deben ser miembros del grupo).
-        </div>
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'monto'}">
-            Escribe un monto total mayor a $0.
-        </div>
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'descripcion'}">
-            Escribe una descripción (máximo 100 caracteres).
-        </div>
-        <div class="alert-message" role="alert" th:if="${param.error != null and param.error[0] == 'fecha'}">
-            La fecha del gasto no es válida.
-        </div>
+                            <div class="nx-form-row-2">
+                                <div class="nx-form-group" style="margin-bottom: 0;">
+                                    <label for="montoTotal" class="nx-label">Monto total (COP)</label>
+                                    <input type="text"
+                                           id="montoTotal"
+                                           name="monto"
+                                           class="nx-input nx-money"
+                                           inputmode="numeric"
+                                           placeholder="Ej: 50000 o 50.000"
+                                           required>
+                                    <span class="nx-hint">Solo pesos enteros COP (sin decimales ni comas).</span>
+                                </div>
 
-        <!-- CAMPO: DESCRIPCIÓN -->
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="descripcion" class="form-label" style="font-size: 13px; font-weight: 500;">
-                Descripción
-            </label>
-            <input
-                type="text"
-                id="descripcion"
-                name="descripcion"
-                maxlength="100"
-                class="form-input"
-                style="height: 52px; background-color: #F5F0E5;"
-                placeholder="Ej: Mercado, hospedaje..."
-                required>
-        </div>
+                                <div class="nx-form-group" style="margin-bottom: 0;">
+                                    <label for="fecha" class="nx-label">Fecha del gasto</label>
+                                    <input type="date"
+                                           id="fecha"
+                                           name="fecha"
+                                           class="nx-input"
+                                           th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"
+                                           required>
+                                    <span class="nx-hint">Fecha editable según cuándo ocurrió el gasto.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
-        <!-- CAMPO: MONTO TOTAL (ESTILO NEQUI) -->
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="montoTotal" class="form-label" style="font-size: 13px; font-weight: 500;">
-                Monto total
-            </label>
-            <div class="monto-total-box">
-                <span class="monto-currency-symbol">$</span>
-                <input
-                    type="text"
-                    id="montoTotal"
-                    name="monto"
-                    class="monto-total-input input-formateado"
-                    inputmode="numeric"
-                    placeholder="0"
-                    required>
-            </div>
-        </div>
+                    <section class="nx-card">
+                        <div class="nx-card-header">
+                            <div>
+                                <h2 class="nx-card-title">¿Quién pagó?</h2>
+                                <p class="nx-card-subtitle">Selecciona uno o varios pagadores e indica el aporte exacto de cada uno.</p>
+                            </div>
+                            <span id="mensajeSumaPagos" class="nx-badge nx-badge-neutral nx-money">Suma: $0 COP</span>
+                        </div>
+                        <div class="nx-card-body">
+                            <div class="payer-list">
+                                <div th:each="miembro, iter : ${miembros}"
+                                     class="payer-row"
+                                     th:classappend="${iter.index == 0} ? ' is-selected'">
+                                    <input type="checkbox"
+                                           class="real-checkbox-pagador"
+                                           name="pagadoresId"
+                                           th:id="'pagadorChk-' + ${miembro.usuario.id}"
+                                           th:value="${miembro.usuario.id}"
+                                           th:checked="${iter.index == 0}">
+                                    <button type="button"
+                                            class="payer-toggle-btn"
+                                            th:attr="aria-pressed=${iter.index == 0 ? 'true' : 'false'}, data-target-chk='pagadorChk-' + ${miembro.usuario.id}">
+                                        <span class="nx-check-indicator" aria-hidden="true" th:text="${iter.index == 0} ? '✓' : ''"></span>
+                                        <span th:text="${miembro.usuario.name}">Nombre</span>
+                                    </button>
+                                    <input type="text"
+                                           class="input-monto-pagador nx-money"
+                                           th:classappend="${iter.index == 0} ? '' : ' oculto'"
+                                           name="montosPagados"
+                                           inputmode="numeric"
+                                           placeholder="Monto COP"
+                                           th:disabled="${iter.index != 0}"
+                                           th:attr="aria-label='Monto pagado por ' + ${miembro.usuario.name}">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
-        <!-- CAMPO: FECHA -->
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="fecha" class="form-label" style="font-size: 13px; font-weight: 500;">
-                Fecha
-            </label>
-            <input
-                type="date"
-                id="fecha"
-                name="fecha"
-                class="form-input"
-                style="height: 52px; background-color: #F5F0E5;"
-                th:value="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy-MM-dd')}"
-                readonly>
-        </div>
-
-        <!-- SECCIÓN: ¿QUIÉN PAGÓ? -->
-        <section class="section-block" style="padding-top: 4px;">
-            <h2 class="section-block-title" style="font-size: 16px;">¿Quién pagó?</h2>
-            <p class="section-block-desc" style="font-size: 12px; line-height: 1.4;">
-                Marca a todas las personas que pusieron dinero para este gasto, y escribe cuánto puso cada una.
-            </p>
-
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
-                <div th:each="miembro : ${miembros}" class="payer-row" th:id="'payer-row-' + ${miembro.usuario.id}">
-                    <!-- Botón/Label toggle de pagador -->
-                    <button type="button" class="payer-toggle-btn" role="checkbox" aria-checked="false" th:data-id="${miembro.usuario.id}">
-                        <!-- Checkbox custom -->
-                        <span class="custom-checkbox" aria-hidden="true" th:id="'checkbox-pagador-box-' + ${miembro.usuario.id}">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                <path d="M2.5 6.2 5 8.5l4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-
-                        <!-- Checkbox real oculto -->
-                        <input
-                            type="checkbox"
-                            name="pagadoresId"
-                            class="real-checkbox-pagador"
-                            style="display: none;"
-                            th:id="'real-pagador-' + ${miembro.usuario.id}"
-                            th:value="${miembro.usuario.id}">
-
-                        <span th:text="${miembro.usuario.name}">Nombre del usuario</span>
-                    </button>
-
-                    <!-- Input individual de monto -->
-                    <div class="payer-amount-box" th:id="'amount-box-' + ${miembro.usuario.id}">
-                        <span aria-hidden="true">$</span>
-                        <input
-                            type="text"
-                            name="montosPagados"
-                            class="payer-amount-input input-monto-pagador input-formateado"
-                            placeholder="0"
-                            inputmode="numeric"
-                            disabled
-                            th:aria-label="'Monto pagado por ' + ${miembro.usuario.name}"
-                            th:id="'monto-pagador-' + ${miembro.usuario.id}">
-                    </div>
+                    <section class="nx-card">
+                        <div class="nx-card-header">
+                            <div>
+                                <h2 class="nx-card-title">¿Entre quiénes se divide?</h2>
+                                <p class="nx-card-subtitle">División equitativa entre los miembros seleccionados.</p>
+                            </div>
+                            <button type="button" id="btnToggleTodosParticipantes" class="nx-btn nx-btn-ghost nx-btn-sm">
+                                Seleccionar todos
+                            </button>
+                        </div>
+                        <div class="nx-card-body">
+                            <div class="participant-list">
+                                <label th:each="miembro : ${miembros}" class="participant-row is-selected">
+                                    <span class="participant-label">
+                                        <input type="checkbox"
+                                               class="real-checkbox-participante"
+                                               name="participantes"
+                                               th:value="${miembro.usuario.id}"
+                                               checked
+                                               style="width:18px;height:18px;accent-color:var(--nx-forest);">
+                                        <span th:text="${miembro.usuario.name}">Participante</span>
+                                    </span>
+                                    <span class="nx-hint participant-share nx-money">$0 COP</span>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
                 </div>
+
+                <!-- Columna lateral informativa -->
+                <aside class="nx-sticky-aside">
+                    <section class="nx-card">
+                        <div class="nx-card-header">
+                            <h2 class="nx-card-title">Resumen de verificación</h2>
+                        </div>
+                        <div class="nx-card-body nx-stack-md">
+                            <div class="nx-row-between">
+                                <span class="nx-hint">Total ingresado</span>
+                                <strong id="resumenTotal" class="nx-money">$0 COP</strong>
+                            </div>
+                            <div class="nx-row-between">
+                                <span class="nx-hint">Pagadores seleccionados</span>
+                                <strong id="resumenPagadoresCount" class="nx-money">1</strong>
+                            </div>
+                            <div class="nx-row-between">
+                                <span class="nx-hint">Participantes</span>
+                                <strong id="resumenParticipantesCount" class="nx-money" th:text="${#lists.size(miembros)}">1</strong>
+                            </div>
+                            <div class="nx-row-between" style="padding-top: 10px; border-top: 1px solid var(--nx-border);">
+                                <span class="nx-hint">Cuota estimada c/u</span>
+                                <strong id="resumenCuota" class="nx-money nx-text-positive">$0 COP</strong>
+                            </div>
+
+                            <p id="formErrorLive" class="nx-field-error" role="alert" style="display:none; margin:0;"></p>
+
+                            <button type="submit" id="btnGuardarGasto" class="nx-btn nx-btn-primary nx-btn-block">
+                                Guardar gasto
+                            </button>
+                            <a th:href="@{/grupo/{id}(id=${grupo.id})}" class="nx-btn nx-btn-secondary nx-btn-block">
+                                Cancelar
+                            </a>
+                        </div>
+                    </section>
+                </aside>
             </div>
+        </form>
 
-            <!-- Ayuda en vivo de validación de sumas -->
-            <p id="mensajeSumaPagos" aria-live="polite" style="font-size: 12px; font-weight: 600; margin: 4px 0 0; min-height: 18px;"></p>
-        </section>
+        <script>
+            (function () {
+                const form = document.getElementById('formGasto');
+                const inputTotal = document.getElementById('montoTotal');
+                const badgeSuma = document.getElementById('mensajeSumaPagos');
+                const resumenTotal = document.getElementById('resumenTotal');
+                const resumenPagadoresCount = document.getElementById('resumenPagadoresCount');
+                const resumenParticipantesCount = document.getElementById('resumenParticipantesCount');
+                const resumenCuota = document.getElementById('resumenCuota');
+                const errorLive = document.getElementById('formErrorLive');
+                const btnTodos = document.getElementById('btnToggleTodosParticipantes');
 
-        <!-- SECCIÓN: DIVIDIR ENTRE -->
-        <section class="section-block" style="padding-top: 4px;">
-            <h2 class="section-block-title" style="font-size: 16px;">Dividir entre</h2>
-            <p class="section-block-desc" style="font-size: 12px;">
-                Selecciona las personas que participarán en el gasto.
-            </p>
-
-            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
-                <div th:each="miembro : ${miembros}">
-                    <button type="button" class="participant-row" role="checkbox" aria-checked="true" th:data-id="${miembro.usuario.id}">
-                        <!-- Checkbox custom -->
-                        <span class="custom-checkbox checked" aria-hidden="true" th:id="'checkbox-part-box-' + ${miembro.usuario.id}">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                <path d="M2.5 6.2 5 8.5l4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-
-                        <!-- Checkbox real oculto (por defecto todos seleccionados) -->
-                        <input
-                            type="checkbox"
-                            name="participantes"
-                            class="real-checkbox-participante"
-                            style="display: none;"
-                            th:id="'real-part-' + ${miembro.usuario.id}"
-                            th:value="${miembro.usuario.id}"
-                            checked>
-
-                        <span th:text="${miembro.usuario.name}">Nombre del usuario</span>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- BANNER DE REPARTO EQUITATIVO -->
-        <div class="info-reparto-banner">
-            <span style="font-size: 15px;"></span>
-            <span>Se dividirá en partes iguales entre las personas seleccionadas.</span>
-        </div>
-
-        <!-- BOTÓN GUARDAR -->
-        <button type="submit" class="btn-submit" style="height: 54px; font-size: 15px; margin-top: 4px;">
-            Guardar gasto
-        </button>
-
-    </form>
-
-</main>
-
-<script>
-    // ==========================================
-    // PARTE 1: TOGGLE DE PAGADORES
-    // ==========================================
-    const payerButtons = document.querySelectorAll('.payer-toggle-btn');
-
-    function sincronizarPagadorUI(btn) {
-        const userId = btn.getAttribute('data-id');
-        const realCheck = document.getElementById('real-pagador-' + userId);
-        const box = document.getElementById('checkbox-pagador-box-' + userId);
-        const row = document.getElementById('payer-row-' + userId);
-        const amountBox = document.getElementById('amount-box-' + userId);
-        const amountInput = document.getElementById('monto-pagador-' + userId);
-        if (!realCheck || !box || !row || !amountBox || !amountInput) return;
-
-        const activo = Boolean(realCheck.checked);
-        btn.setAttribute('aria-checked', String(activo));
-        box.classList.toggle('checked', activo);
-        row.classList.toggle('active', activo);
-        amountBox.classList.toggle('active', activo);
-        amountInput.disabled = !activo;
-        if (!activo) {
-            amountInput.value = '';
-        }
-    }
-
-    payerButtons.forEach(btn => {
-        sincronizarPagadorUI(btn);
-
-        btn.addEventListener('click', () => {
-            const userId = btn.getAttribute('data-id');
-            const realCheck = document.getElementById('real-pagador-' + userId);
-            const amountInput = document.getElementById('monto-pagador-' + userId);
-            if (!realCheck) return;
-
-            realCheck.checked = !realCheck.checked;
-            sincronizarPagadorUI(btn);
-
-            if (realCheck.checked) {
-                if (amountInput) {
-                    amountInput.focus();
+                function parseCopClient(raw) {
+                    if (!raw) return 0;
+                    let clean = String(raw).trim().replace(/[\s$]/g, '');
+                    if (/^\d{1,3}(\.\d{3})+$/.test(clean)) {
+                        clean = clean.replace(/\./g, '');
+                    }
+                    if (!/^\d+$/.test(clean)) return NaN;
+                    return parseInt(clean, 10);
                 }
 
-                // Marcar automáticamente en "Dividir entre"
-                const partCheck = document.getElementById('real-part-' + userId);
-                const partBox = document.getElementById('checkbox-part-box-' + userId);
-                const partBtn = document.querySelector('.participant-row[data-id="' + userId + '"]');
-                if (partCheck && !partCheck.checked) {
-                    partCheck.checked = true;
-                    if (partBox) partBox.classList.add('checked');
-                    if (partBtn) partBtn.setAttribute('aria-checked', 'true');
+                function formatCop(num) {
+                    if (!isFinite(num) || isNaN(num)) return '$0 COP';
+                    return '$' + Math.round(num).toLocaleString('es-CO') + ' COP';
                 }
-            }
 
-            actualizarMensajeSuma();
-        });
-    });
-
-    // ==========================================
-    // PARTE 2: TOGGLE DE PARTICIPANTES (DIVIDIR ENTRE)
-    // ==========================================
-    const partButtons = document.querySelectorAll('.participant-row');
-
-    function sincronizarParticipanteUI(btn) {
-        const userId = btn.getAttribute('data-id');
-        const realCheck = document.getElementById('real-part-' + userId);
-        const box = document.getElementById('checkbox-part-box-' + userId);
-        if (!realCheck || !box) return;
-
-        const activo = Boolean(realCheck.checked);
-        btn.setAttribute('aria-checked', String(activo));
-        box.classList.toggle('checked', activo);
-    }
-
-    partButtons.forEach(btn => {
-        sincronizarParticipanteUI(btn);
-
-        btn.addEventListener('click', () => {
-            const userId = btn.getAttribute('data-id');
-            const realCheck = document.getElementById('real-part-' + userId);
-            if (!realCheck) return;
-
-            realCheck.checked = !realCheck.checked;
-            sincronizarParticipanteUI(btn);
-        });
-    });
-
-    // ==========================================
-    // PARTE 3: FORMATO MONEDA PESOS EN VIVO
-    // ==========================================
-    function obtenerNumero(texto) {
-        if (!texto) return 0;
-        const soloDigitos = texto.replace(/\D/g, '');
-        return soloDigitos === '' ? 0 : parseInt(soloDigitos, 10);
-    }
-
-    function formatearPesos(numero) {
-        return numero.toLocaleString('es-CO');
-    }
-
-    function activarFormato(input) {
-        input.addEventListener('input', () => {
-            const num = obtenerNumero(input.value);
-            input.value = num === 0 ? '' : formatearPesos(num);
-            actualizarMensajeSuma();
-        });
-    }
-
-    const inputTotal = document.getElementById('montoTotal');
-    const inputsPagador = document.querySelectorAll('.input-monto-pagador');
-    const mensajeSuma = document.getElementById('mensajeSumaPagos');
-
-    activarFormato(inputTotal);
-    inputsPagador.forEach(inp => activarFormato(inp));
-
-    function actualizarMensajeSuma() {
-        const total = obtenerNumero(inputTotal.value);
-        let suma = 0;
-        let hayPagadorSeleccionado = false;
-        let hayPagadorSinMonto = false;
-
-        inputsPagador.forEach(inp => {
-            if (!inp.disabled) {
-                hayPagadorSeleccionado = true;
-                const val = obtenerNumero(inp.value);
-                if (val <= 0) {
-                    hayPagadorSinMonto = true;
+                function showError(msg) {
+                    if (!errorLive) return;
+                    if (!msg) {
+                        errorLive.style.display = 'none';
+                        errorLive.textContent = '';
+                    } else {
+                        errorLive.style.display = 'block';
+                        errorLive.textContent = msg;
+                    }
                 }
-                suma += val;
-            }
-        });
 
-        if (total === 0 && suma === 0 && !hayPagadorSeleccionado) {
-            mensajeSuma.textContent = '';
-            mensajeSuma.style.color = 'inherit';
-            return;
-        }
+                function syncSinglePayerAmount() {
+                    const checkedRows = Array.from(document.querySelectorAll('.payer-row')).filter((r) =>
+                        r.querySelector('.real-checkbox-pagador')?.checked
+                    );
+                    if (checkedRows.length === 1) {
+                        const montoInput = checkedRows[0].querySelector('.input-monto-pagador');
+                        if (montoInput && !montoInput.dataset.manualEdited) {
+                            montoInput.value = inputTotal.value.trim();
+                        }
+                    }
+                }
 
-        if (hayPagadorSinMonto) {
-            mensajeSuma.textContent = 'Todos los pagadores seleccionados deben tener un monto mayor a $0.';
-            mensajeSuma.style.color = '#EC6354';
-            return;
-        }
+                function recalcResumen() {
+                    const totalVal = parseCopClient(inputTotal.value);
+                    const validTotal = !isNaN(totalVal) && totalVal > 0 ? totalVal : 0;
 
-        if (suma === total && total > 0) {
-            mensajeSuma.textContent = '✓ Los pagos coinciden exactamente con el monto total.';
-            mensajeSuma.style.color = '#1E6B55';
-        } else {
-            const dif = total - suma;
-            if (dif > 0) {
-                mensajeSuma.textContent = 'Faltan $' + formatearPesos(dif) + ' por asignar entre los pagadores.';
-                mensajeSuma.style.color = '#B93829';
-            } else {
-                mensajeSuma.textContent = 'Los pagos superan el monto total por $' + formatearPesos(Math.abs(dif)) + '.';
-                mensajeSuma.style.color = '#B93829';
-            }
-        }
-    }
+                    const rows = Array.from(document.querySelectorAll('.payer-row'));
+                    let sumPayers = 0;
+                    let activePayers = 0;
 
-    document.getElementById('formGasto').addEventListener('submit', (e) => {
-        const total = obtenerNumero(inputTotal.value);
-        let suma = 0;
-        let pagadoresActivos = 0;
-        let pagadorSinMonto = false;
+                    rows.forEach((row) => {
+                        const chk = row.querySelector('.real-checkbox-pagador');
+                        const inp = row.querySelector('.input-monto-pagador');
+                        const btn = row.querySelector('.payer-toggle-btn');
+                        const ind = row.querySelector('.nx-check-indicator');
 
-        inputsPagador.forEach(inp => {
-            if (!inp.disabled) {
-                pagadoresActivos++;
-                const val = obtenerNumero(inp.value);
-                if (val <= 0) pagadorSinMonto = true;
-                suma += val;
-            }
-        });
+                        const checked = !!(chk && chk.checked);
+                        row.classList.toggle('is-selected', checked);
+                        if (btn) btn.setAttribute('aria-pressed', String(checked));
+                        if (ind) ind.textContent = checked ? '✓' : '';
+                        if (inp) {
+                            inp.classList.toggle('oculto', !checked);
+                            inp.disabled = !checked;
+                            if (checked) {
+                                const v = parseCopClient(inp.value);
+                                if (!isNaN(v)) sumPayers += v;
+                            }
+                        }
+                        if (checked) activePayers++;
+                    });
 
-        const participantesMarcados = document.querySelectorAll('.real-checkbox-participante:checked').length;
+                    const partCheckboxes = Array.from(document.querySelectorAll('.real-checkbox-participante'));
+                    const activeParts = partCheckboxes.filter((c) => c.checked).length;
+                    const cuota = activeParts > 0 && validTotal > 0 ? Math.round(validTotal / activeParts) : 0;
 
-        if (total <= 0 || pagadoresActivos === 0 || pagadorSinMonto || suma !== total || participantesMarcados === 0) {
-            e.preventDefault();
-            actualizarMensajeSuma();
-            if (pagadoresActivos === 0) {
-                mensajeSuma.textContent = 'Selecciona al menos un pagador con monto válido.';
-                mensajeSuma.style.color = '#EC6354';
-            } else if (participantesMarcados === 0) {
-                mensajeSuma.textContent = 'Selecciona al menos un participante.';
-                mensajeSuma.style.color = '#EC6354';
-            }
-        }
-    });
-</script>
+                    partCheckboxes.forEach((chk) => {
+                        const row = chk.closest('.participant-row');
+                        if (row) {
+                            row.classList.toggle('is-selected', chk.checked);
+                            const shareEl = row.querySelector('.participant-share');
+                            if (shareEl) {
+                                shareEl.textContent = chk.checked ? formatCop(cuota) : '$0 COP';
+                            }
+                        }
+                    });
 
+                    if (resumenTotal) resumenTotal.textContent = formatCop(validTotal);
+                    if (resumenPagadoresCount) resumenPagadoresCount.textContent = String(activePayers);
+                    if (resumenParticipantesCount) resumenParticipantesCount.textContent = String(activeParts);
+                    if (resumenCuota) resumenCuota.textContent = formatCop(cuota);
+
+                    if (badgeSuma) {
+                        badgeSuma.textContent = 'Suma: ' + formatCop(sumPayers);
+                        badgeSuma.className = 'nx-badge nx-money ' + (
+                            validTotal > 0 && sumPayers === validTotal
+                                ? 'nx-badge-emerald'
+                                : (activePayers === 0 || (validTotal > 0 && sumPayers !== validTotal) ? 'nx-badge-amber' : 'nx-badge-neutral')
+                        );
+                    }
+                }
+
+                document.querySelectorAll('.payer-toggle-btn').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const chk = document.getElementById(btn.getAttribute('data-target-chk'));
+                        if (!chk) return;
+                        chk.checked = !chk.checked;
+                        const row = btn.closest('.payer-row');
+                        const inp = row ? row.querySelector('.input-monto-pagador') : null;
+                        if (chk.checked && inp && !inp.value) {
+                            const checkedCount = document.querySelectorAll('.real-checkbox-pagador:checked').length;
+                            if (checkedCount === 1 && inputTotal.value.trim()) {
+                                inp.value = inputTotal.value.trim();
+                            }
+                        }
+                        if (!chk.checked && inp) {
+                            delete inp.dataset.manualEdited;
+                        }
+                        recalcResumen();
+                    });
+                });
+
+                document.querySelectorAll('.input-monto-pagador').forEach((inp) => {
+                    inp.addEventListener('input', () => {
+                        inp.dataset.manualEdited = 'true';
+                        recalcResumen();
+                    });
+                });
+
+                document.querySelectorAll('.real-checkbox-participante').forEach((chk) => {
+                    chk.addEventListener('change', recalcResumen);
+                });
+
+                if (btnTodos) {
+                    btnTodos.addEventListener('click', () => {
+                        const boxes = Array.from(document.querySelectorAll('.real-checkbox-participante'));
+                        const allChecked = boxes.every((b) => b.checked);
+                        boxes.forEach((b) => { b.checked = !allChecked; });
+                        recalcResumen();
+                    });
+                }
+
+                if (inputTotal) {
+                    inputTotal.addEventListener('input', () => {
+                        syncSinglePayerAmount();
+                        recalcResumen();
+                    });
+                }
+
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        showError('');
+                        const totalVal = parseCopClient(inputTotal.value);
+                        if (isNaN(totalVal) || totalVal <= 0) {
+                            e.preventDefault();
+                            showError('Ingresa un monto total válido en pesos COP mayor a $0.');
+                            inputTotal.focus();
+                            return;
+                        }
+
+                        // CASE_B: Validar pagadores seleccionados y suma exacta antes de enviar
+                        const checkedRows = Array.from(document.querySelectorAll('.payer-row')).filter((r) =>
+                            r.querySelector('.real-checkbox-pagador')?.checked
+                        );
+                        if (checkedRows.length === 0) {
+                            e.preventDefault();
+                            showError('Selecciona al menos un pagador.');
+                            return;
+                        }
+
+                        let sum = 0;
+                        for (const row of checkedRows) {
+                            const inp = row.querySelector('.input-monto-pagador');
+                            const val = parseCopClient(inp ? inp.value : '');
+                            if (isNaN(val) || val <= 0) {
+                                e.preventDefault();
+                                showError('Cada pagador seleccionado debe tener un monto válido mayor a $0.');
+                                if (inp) inp.focus();
+                                return;
+                            }
+                            sum += val;
+                        }
+
+                        if (sum !== totalVal) {
+                            e.preventDefault();
+                            showError('La suma de los pagadores (' + formatCop(sum) + ') debe coincidir con el total (' + formatCop(totalVal) + ').');
+                            return;
+                        }
+
+                        const activeParts = document.querySelectorAll('.real-checkbox-participante:checked').length;
+                        if (activeParts === 0) {
+                            e.preventDefault();
+                            showError('Selecciona al menos un participante para dividir el gasto.');
+                        }
+                    });
+                }
+
+                recalcResumen();
+            })();
+        </script>
+    </div>
 </body>
+
 </html>

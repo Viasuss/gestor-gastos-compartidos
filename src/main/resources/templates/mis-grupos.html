@@ -1,92 +1,136 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/nexus-layout :: head('Mis grupos · NEXUS')}"></head>
-<body>
-<div th:replace="~{fragments/nexus-layout :: topnav('grupos')}"></div>
 
-<!-- ENCABEZADO -->
-<header class="subpage-header">
-    <a th:href="@{/inicio}" class="btn-back" aria-label="Volver">←</a>
-    <h1 class="subpage-title">Mis grupos</h1>
-</header>
+<head th:replace="~{fragments/nexus-layout :: nexusHead('Mis grupos — NEXUS')}"></head>
 
-<main class="page-content">
+<body th:replace="~{fragments/nexus-layout :: appBody('grupos', 'Mis grupos', null, null, ~{::#nexus-page-content})}">
+    <div id="nexus-page-content">
+        <section class="nx-page-header">
+            <div>
+                <h1 class="nx-page-title">Mis grupos</h1>
+                <p class="nx-page-subtitle">
+                    <span th:text="${gruposActivosCount != null ? gruposActivosCount : 0}">0</span> grupos activos donde puedes registrar gastos y consultar saldos.
+                </p>
+            </div>
+            <div class="nx-page-actions">
+                <div class="nx-search-bar" th:if="${gruposActivosCount != null and gruposActivosCount > 0}">
+                    <label for="filtroGruposInput" class="nx-sr-only">Buscar grupo por nombre</label>
+                    <input type="search"
+                           id="filtroGruposInput"
+                           class="nx-input"
+                           placeholder="Buscar grupo por nombre..."
+                           autocomplete="off">
+                </div>
+                <a th:href="@{/grupo/crear}" class="nx-btn nx-btn-primary">+ Crear grupo</a>
+            </div>
+        </section>
 
-    <!-- BOTÓN CREAR NUEVO GRUPO -->
-    <a th:href="@{/grupo/crear}" class="btn-submit" style="height: 50px; margin-top: 0;">
-        +&nbsp;&nbsp;Crear nuevo grupo
-    </a>
+        <!-- Aviso si hay invitaciones pendientes -->
+        <div th:if="${session.invitacionesPendientes != null and session.invitacionesPendientes > 0}"
+             class="nx-alert nx-alert-info">
+            <div style="flex:1;">
+                Tienes <strong th:text="${session.invitacionesPendientes}">0</strong> invitación(es) pendiente(s) de grupo.
+            </div>
+            <a th:href="@{/invitaciones}" class="nx-btn nx-btn-secondary nx-btn-sm">Ver invitaciones</a>
+        </div>
 
-    <!-- CONTADOR DE GRUPOS ACTIVOS -->
-    <p class="section-block-desc" style="font-weight: 500;"
-       th:text="${gruposActivosCount} + ' grupos activos'">
-        0 grupos activos
-    </p>
+        <!-- Estado vacío -->
+        <section th:if="${gruposActivosCount == null or gruposActivosCount == 0}" class="nx-card">
+            <div class="nx-empty-state">
+                <div class="nx-empty-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h2 class="nx-empty-title">Todavía no eres miembro de ningún grupo activo</h2>
+                <p class="nx-empty-desc">
+                    Crea un grupo nuevo o acepta una invitación pendiente para comenzar a dividir gastos en pesos COP.
+                </p>
+                <div class="nx-page-actions">
+                    <a th:href="@{/grupo/crear}" class="nx-btn nx-btn-primary">Crear grupo</a>
+                    <a th:href="@{/invitaciones}" class="nx-btn nx-btn-secondary">Revisar invitaciones</a>
+                </div>
+            </div>
+        </section>
 
-    <!-- ESTADO VACÍO -->
-    <div class="empty-state" th:if="${#lists.isEmpty(miembros) or gruposActivosCount == 0}">
-        Todavía no perteneces a ningún grupo activo.
+        <!-- Cuadrícula de grupos activos (2-3 columnas desktop) -->
+        <section th:if="${gruposActivosCount != null and gruposActivosCount > 0}"
+                 id="gruposGridContainer"
+                 class="nx-group-grid-3"
+                 aria-label="Listado de grupos activos">
+            <article th:each="m : ${miembros}"
+                     th:if="${m.estado.name() == 'MIEMBRO'}"
+                     th:with="g=${m.grupo}, bal=${balancePorGrupo != null ? balancePorGrupo[g.id] : T(java.math.BigDecimal).ZERO}, integrantes=${detallesGrupo != null ? detallesGrupo[g.id] : ''}"
+                     th:attr="data-grupo-nombre=${#strings.toLowerCase(g.name)}"
+                     class="nx-card nx-card-padded nx-stack-md"
+                     style="justify-content: space-between;">
+
+                <div>
+                    <div class="nx-row-between" style="align-items: flex-start;">
+                        <h2 class="nx-group-name" style="font-size: 1.08rem;" th:text="${g.name}">Nombre grupo</h2>
+                        <span th:if="${bal != null and bal.signum() > 0}" class="nx-badge nx-badge-emerald">A tu favor</span>
+                        <span th:if="${bal != null and bal.signum() < 0}" class="nx-badge nx-badge-danger">Debes</span>
+                        <span th:if="${bal == null or bal.signum() == 0}" class="nx-badge nx-badge-neutral">Al día</span>
+                    </div>
+                    <p class="nx-hint" style="margin: 8px 0 0;" th:if="${!#strings.isEmpty(integrantes)}">
+                        Miembros: <span th:text="${integrantes}">Integrantes</span>
+                    </p>
+                    <p class="nx-hint" style="margin: 4px 0 0;" th:if="${g.fechaCreacion != null}">
+                        Creado el <span th:text="${#temporals.format(g.fechaCreacion, 'dd/MM/yyyy')}">01/01/2026</span>
+                    </p>
+                </div>
+
+                <div>
+                    <div class="nx-row-between" style="padding: 12px 0; border-top: 1px solid var(--nx-border); margin-bottom: 12px;">
+                        <span class="nx-hint">Tu saldo en el grupo</span>
+                        <strong class="nx-money"
+                                style="font-size: 1.08rem;"
+                                th:classappend="${bal != null and bal.signum() > 0 ? ' nx-text-positive' : (bal != null and bal.signum() < 0 ? ' nx-text-negative' : ' nx-text-neutral')}"
+                                th:text="${bal == null or bal.signum() == 0 ? '$0 COP' : ((bal.signum() > 0 ? '+' : '-') + '$' + #numbers.formatDecimal(bal.abs(), 1, 'POINT', 0, 'COMMA') + ' COP')}">
+                            $0 COP
+                        </strong>
+                    </div>
+
+                    <div class="nx-row-between">
+                        <a th:href="@{/grupo/{id}(id=${g.id})}" class="nx-btn nx-btn-primary nx-btn-sm" style="flex: 1;">
+                            Ver grupo
+                        </a>
+                        <a th:href="@{/grupo/{id}/gasto/nuevo(id=${g.id})}" class="nx-btn nx-btn-secondary nx-btn-sm">
+                            + Gasto
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <div id="sinCoincidenciasGrupos" class="nx-card nx-empty-state" style="display:none; margin-top: 16px;">
+            <p class="nx-empty-title">Sin coincidencias</p>
+            <p class="nx-empty-desc">No se encontraron grupos activos con ese nombre.</p>
+        </div>
+
+        <script>
+            (function () {
+                const input = document.getElementById('filtroGruposInput');
+                const grid = document.getElementById('gruposGridContainer');
+                const empty = document.getElementById('sinCoincidenciasGrupos');
+                if (!input || !grid) return;
+
+                input.addEventListener('input', function () {
+                    const q = input.value.trim().toLowerCase();
+                    let visibles = 0;
+                    grid.querySelectorAll('[data-grupo-nombre]').forEach((card) => {
+                        const match = !q || (card.getAttribute('data-grupo-nombre') || '').includes(q);
+                        card.style.display = match ? '' : 'none';
+                        if (match) visibles++;
+                    });
+                    if (empty) {
+                        empty.style.display = visibles === 0 ? '' : 'none';
+                    }
+                });
+            })();
+        </script>
     </div>
-
-    <!-- LISTA DE GRUPOS -->
-    <div class="groups-list" th:unless="${#lists.isEmpty(miembros)}">
-        <th:block th:each="miembro : ${miembros}">
-            <a th:if="${miembro.estado.name() == 'MIEMBRO'}"
-               th:href="@{/grupo/{id}(id=${miembro.grupo.id})}"
-               class="group-card"
-               style="padding: 16px;">
-
-                <!-- Ícono / Emoji del grupo -->
-                <div class="group-card-icon" style="width: 46px; height: 46px; font-size: 22px;">
-                    👥
-                </div>
-
-                <!-- Información del grupo -->
-                <div class="group-card-info">
-                    <span class="group-card-name" th:text="${miembro.grupo.name}">
-                        Nombre del grupo
-                    </span>
-                    <span class="group-card-members"
-                          th:text="${detallesGrupo != null and detallesGrupo.get(miembro.grupo.id) != null ? detallesGrupo.get(miembro.grupo.id) : 'Integrantes del grupo'}">
-                        Johan, Wilmer
-                    </span>
-                </div>
-
-                <!-- Monto y Estado de Balance -->
-                <div th:with="balance=${balancePorGrupo.get(miembro.grupo.id)}"
-                     style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0;">
-
-                    <!-- Te deben -->
-                    <th:block th:if="${balance != null and balance.signum() > 0}">
-                        <span class="group-card-amount pos"
-                              style="color: #2D8B71;"
-                              th:text="'$' + ${#numbers.formatDecimal(balance, 1, 'POINT', 0, 'COMMA')}">
-                            $0
-                        </span>
-                        <span style="font-size: 11px; color: var(--text-muted);">te deben</span>
-                    </th:block>
-
-                    <!-- Debes -->
-                    <th:block th:if="${balance != null and balance.signum() < 0}">
-                        <span class="group-card-amount neg"
-                              th:text="'$' + ${#numbers.formatDecimal(balance.abs(), 1, 'POINT', 0, 'COMMA')}">
-                            $0
-                        </span>
-                        <span style="font-size: 11px; color: var(--text-muted);">debes</span>
-                    </th:block>
-
-                    <!-- A paz y salvo -->
-                    <th:block th:if="${balance == null or balance.signum() == 0}">
-                        <span class="group-card-amount" style="color: var(--text-muted);">$0</span>
-                        <span style="font-size: 11px; color: var(--text-muted);">al día</span>
-                    </th:block>
-
-                </div>
-            </a>
-        </th:block>
-    </div>
-
-</main>
-
 </body>
+
 </html>
