@@ -1,0 +1,11 @@
+target/
+.git/
+.idea/
+.vscode/
+.env
+.env.*
+*.log
+*.zip
+repomix-output*
+docs/
+*.iml
